@@ -1,0 +1,73 @@
+# Agent Team Operating Model
+
+This is a lightweight operating model for reviewable autonomous agent work.
+
+## Roles
+
+### Human / owner
+
+- Provides product intent and risk tolerance.
+- Approves scope, credentials, production mutations, merge, and deploy when required.
+- Reviews evidence before accepting work.
+
+### Local assistant / operator
+
+- Helps turn intent into structured issues.
+- Finds source-of-truth docs and context.
+- Updates trackers and handoff notes.
+- Does not silently turn vague intent into production changes.
+
+### Supervisor / CTO / planner agent
+
+- Shapes work into implementation-ready issues.
+- Confirms repo/workspace wiring.
+- Chooses the right implementation path.
+- Keeps lifecycle state coherent: backlog, todo, in_progress, in_review, done, blocked.
+
+### Coding agent
+
+- Implements one focused issue.
+- Starts from the required base branch.
+- Keeps scope tight.
+- Runs validation and records exact evidence.
+- Opens a branch / PR / MR as the review handoff.
+
+### Reviewer / QA agent
+
+- Checks spec compliance and evidence quality.
+- Verifies screenshots, traces, logs, tests, and review notes.
+- Flags gaps instead of accepting vague claims.
+
+### Git provider / code review surface
+
+- Stores branch, diff, review comments, CI output, and evidence attachments.
+- Acts as the durable handoff unit for code work.
+
+## Lifecycle
+
+- `backlog`: candidate work, not active.
+- `todo`: activation handoff; assigned agent should start.
+- `in_progress`: agent is actively working.
+- `in_review`: implementation or answer is ready for human/reviewer inspection.
+- `done`: accepted with evidence recorded.
+- `blocked`: waiting on missing context, access, repo wiring, approval, or dependency.
+- `cancelled`: intentionally stopped.
+
+## Evidence standard
+
+An agent claim is not enough.
+
+Good evidence includes:
+
+- exact commands and pass/fail output
+- test/build/lint results
+- API responses or read-only data checks
+- screenshots or traces for UI behavior
+- branch and PR/MR links
+- fixture data summary
+- mutation boundary
+- known limitations and follow-up issues
+
+## Default rule
+
+Agents should return receipts, not just results.
