@@ -15,7 +15,6 @@ This is a lightweight operating model for reviewable autonomous agent work.
 - Helps turn intent into structured issues.
 - Finds source-of-truth docs and context.
 - Uses board-authorized credentials, when explicitly configured, to create or update issues as the board user/operator.
-- Stores credential values only in a secret manager; public repos and public examples should mention secret-manager pointers only, never token values.
 - Updates trackers and handoff notes.
 - Does not silently turn vague intent into production changes.
 
