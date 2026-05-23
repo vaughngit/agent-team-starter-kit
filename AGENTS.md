@@ -24,3 +24,4 @@ When an AI assistant or coding agent works in this repo:
    - completion evidence
 7. For UI workflows, require browser-visible evidence such as screenshots, traces, or exact manual QA steps.
 8. Make it clear that Paperclip or any other agent board only uses these templates if they are copied into an issue, linked in project docs, or referenced by project/agent instructions.
+9. When describing Hermes posting issues to Paperclip, say Hermes uses board-authorized authentication as the board user/operator. Never include token values, credential strings, or private 1Password item details in this public repo.

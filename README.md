@@ -82,10 +82,11 @@ A practical Paperclip flow:
 
 1. Human gives Hermes a PRD, user story, bug, or rough vision.
 2. Hermes reads the template and creates a Paperclip issue shaped as an execution contract.
-3. Paperclip stores that issue in `backlog` until activation.
-4. When the issue is assigned and moved to `todo`, a focused Paperclip agent receives the issue context.
-5. The agent implements, validates, and posts completion evidence back to the issue and PR/MR.
-6. A reviewer or human decides whether the receipts are good enough to accept the work.
+3. Hermes uses board-authorized authentication to post the issue to Paperclip as a board user/operator. Do not put the board token or secret value in the issue, repo, prompt, or logs; store only a secret-manager pointer in private project docs.
+4. Paperclip stores that issue in `backlog` until activation.
+5. When the issue is assigned and moved to `todo`, a focused Paperclip agent receives the issue context.
+6. The agent implements, validates, and posts completion evidence back to the issue and PR/MR.
+7. A reviewer or human decides whether the receipts are good enough to accept the work.
 
 If you are using GitHub Issues, Linear, Jira, or another tracker, use the same sections there and link the resulting branch or pull request.
 
