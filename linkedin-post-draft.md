@@ -1,25 +1,27 @@
-# LinkedIn post draft: Agent brought receipts + starter kit
+# LinkedIn post draft: Agent teams should bring receipts
 
 The agent brought receipts.
 
-The part I care about is not autonomous code generation by itself.
+That is the part of autonomous coding I care about most right now.
 
-It is what happens after the agent finishes: the verification loop around autonomous code work.
+Not just whether an agent can write code.
 
-Did it understand the issue?
-Did it test the right behavior?
-Did it run in the right environment?
-Did it produce evidence a human can review without replaying the whole task from scratch?
+Whether an agent team can turn a human goal into reviewable work, carry the right context through the handoffs, and return evidence a human can trust.
 
-The workflow I want is simple:
+The workflow I am testing looks like this:
 
-- human gives the vision
-- the vision becomes a structured issue / execution contract
-- focused agents work in focused context windows
+- I start with a PRD, user story, bug, or rough product vision
+- Hermes, my local assistant, turns that into a structured issue / execution contract
+- Hermes posts the issue to Paperclip using board-authorized access as the board operator
+- Paperclip keeps the issue in backlog until it is intentionally activated
+- a focused implementation agent works from that issue contract
+- a reviewer or QA step checks the work against the acceptance criteria
 - the branch or merge request becomes the handoff unit
-- validation gates are explicit
 - screenshots, logs, test output, and review notes come back with the work
+- a changelog captures the durable story: what changed, what evidence was reviewed, and whether downstream work is ready
 - the human reviews receipts, not claims
+
+That last part matters.
 
 A recent UI task made this click for me.
 
@@ -35,15 +37,21 @@ to:
 
 “I can inspect the evidence.”
 
-I put together a small starter kit for this pattern: issue templates, validation gates, UI evidence checklists, and completion evidence prompts that people can adapt for their own agent teams.
+That is the difference between an agent that writes code and an agent that participates in an engineering workflow.
+
+The issue template is not just a form.
+
+It is the handoff contract between the human, the planning agent, the implementation agent, the reviewer, and the code review surface.
+
+I put together a small starter kit for this pattern: issue templates, validation gates, UI evidence checklists, changelog prompts, and completion evidence templates that people can adapt for their own agent teams.
 
 Repo: https://github.com/vaughngit/agent-team-starter-kit
 
-That is the direction I want agentic workflows to go.
+This is the direction I want agentic workflows to go:
 
 Not autonomous agents silently shipping work.
 
-Autonomous agents returning with receipts.
+Agent teams returning with receipts.
 
 Question: if you were reviewing AI-agent work on a production system, what evidence would you require before trusting it?
 
@@ -59,5 +67,43 @@ It includes:
 - agent issue / execution contract template
 - UI evidence validation template
 - completion evidence template
-- example synthetic issue
+- changelog entry template and workflow
+- example synthetic issue and changelog entry
 - lightweight agent team operating model
+
+## Shorter alternate version
+
+The agent brought receipts.
+
+That is the part of autonomous coding I care about most right now.
+
+Not just whether an agent can write code, but whether an agent team can turn a human goal into reviewable work and return evidence a human can trust.
+
+The workflow I am testing:
+
+- human gives a PRD, user story, bug, or rough vision
+- Hermes turns that into a structured issue / execution contract
+- Hermes posts the issue to Paperclip as the board operator
+- Paperclip tracks the issue lifecycle
+- a focused implementation agent works from the issue contract
+- reviewer/QA checks the work against acceptance criteria
+- the branch or merge request becomes the handoff unit
+- screenshots, logs, test output, and review notes come back with the work
+- a changelog records what changed and whether downstream work is ready
+- the human reviews receipts, not claims
+
+A recent UI task made this click.
+
+The agent did not just say “tested.” It used browser automation against a safe fixture, checked the relevant UI states, captured screenshots, and attached the evidence to the merge request.
+
+That changed the review from “the agent says it worked” to “I can inspect the evidence.”
+
+I put together a small starter kit for this pattern: templates for agent issues, validation gates, UI evidence, changelog entries, and completion evidence.
+
+Repo: https://github.com/vaughngit/agent-team-starter-kit
+
+Not autonomous agents silently shipping work.
+
+Agent teams returning with receipts.
+
+Question: if you were reviewing AI-agent work on a production system, what evidence would you require before trusting it?
