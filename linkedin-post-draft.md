@@ -37,7 +37,7 @@ to:
 
 I put together a small starter kit for this pattern: issue templates, validation gates, UI evidence checklists, and completion evidence prompts that people can adapt for their own agent teams.
 
-Repo: <GITHUB_REPO_URL>
+Repo: https://github.com/vaughngit/agent-team-starter-kit
 
 That is the direction I want agentic workflows to go.
 
@@ -53,7 +53,7 @@ For folks interested in the stack I am testing:
 
 ## First comment option
 
-Starter kit: <GITHUB_REPO_URL>
+Starter kit: https://github.com/vaughngit/agent-team-starter-kit
 
 It includes:
 - agent issue / execution contract template
