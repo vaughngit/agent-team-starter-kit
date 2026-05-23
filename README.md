@@ -24,8 +24,11 @@ This starter kit gives you baseline templates for that loop.
 - `templates/agent-issue-template.md` — a generic issue / execution contract template for agent work.
 - `templates/ui-evidence-validation-template.md` — a stricter validation template for UI changes that need screenshots or browser automation.
 - `templates/completion-evidence-template.md` — a checklist for what an agent should return before work is considered reviewable.
+- `templates/changelog-entry-template.md` — a durable narrative layer for multi-issue initiatives and downstream activation decisions.
 - `examples/example-agent-issue.md` — an example issue using fake/synthetic context.
+- `examples/example-changelog-entry.md` — an example changelog entry using fake/synthetic context.
 - `docs/agent-team-operating-model.md` — a lightweight operating model for human, supervisor, coding agent, reviewer, and repo roles.
+- `docs/changelog-workflow.md` — guidance for when and how agent teams should update a changelog.
 
 ## Core idea: agent teams need handoffs
 
@@ -53,7 +56,8 @@ A common pattern:
 3. When the assistant creates an issue, it copies the relevant sections into the issue body.
 4. The agent board or tracker stores that issue as the execution contract.
 5. Implementation and reviewer agents receive the issue body as task context.
-6. Completion evidence is posted back to the same issue or PR/MR.
+6. For dependent or multi-issue work, the changelog captures the durable narrative: what changed, what evidence was reviewed, and whether the next issue can be activated.
+7. Completion evidence is posted back to the same issue or PR/MR.
 
 For example, if Hermes is acting as the local assistant, you can say:
 
@@ -64,12 +68,13 @@ Include acceptance criteria, safety boundaries, validation gates, and completion
 Keep it in backlog unless I explicitly say to activate an agent.
 ```
 
-If you want this to happen automatically in a project, add an instruction to that project's `AGENTS.md`, `.github/copilot-instructions.md`, or team runbook:
+If you want this to happen automatically in a project, add an instruction to that project's `AGENTS.md` or team runbook:
 
 ```text
 Before creating agent issues, read templates/agent-issue-template.md.
 For UI changes, also read templates/ui-evidence-validation-template.md.
 For completion comments, use templates/completion-evidence-template.md.
+For dependent or multi-issue work, use templates/changelog-entry-template.md and docs/changelog-workflow.md.
 ```
 
 ## Use with Paperclip or other agent systems
@@ -86,7 +91,8 @@ A practical Paperclip flow:
 4. Paperclip stores that issue in `backlog` until activation.
 5. When the issue is assigned and moved to `todo`, a focused Paperclip agent receives the issue context.
 6. The agent implements, validates, and posts completion evidence back to the issue and PR/MR.
-7. A reviewer or human decides whether the receipts are good enough to accept the work.
+7. For dependent or multi-issue work, the changelog records what changed, what evidence was reviewed, and whether downstream work is ready to activate.
+8. A reviewer or human decides whether the receipts are good enough to accept the work.
 
 If you are using GitHub Issues, Linear, Jira, or another tracker, use the same sections there and link the resulting branch or pull request.
 

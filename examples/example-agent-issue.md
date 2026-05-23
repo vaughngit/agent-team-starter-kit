@@ -16,6 +16,7 @@ This is a synthetic example. It is intentionally generic and does not describe a
 - Source of truth: this issue
 - Project README / agent contract: `README.md`, `AGENTS.md`
 - Changelog or decision log: `docs/changelog.md`
+- Changelog required: yes — this issue gates whether follow-up import workflow work can start
 
 ## Activation rule
 
@@ -114,6 +115,6 @@ Do not mark done until completion evidence is logged.
 - Screenshot/trace artifacts:
 - Safety evidence / mutation boundary:
 - Human-only QA exception, if any:
-- Documentation/changelog update:
+- Documentation/changelog update: use `templates/changelog-entry-template.md`; summarize what changed, validation evidence, safety boundary, and downstream activation decision
 - Follow-up issues:
 - Done log:

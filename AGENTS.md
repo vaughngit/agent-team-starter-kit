@@ -14,7 +14,8 @@ When an AI assistant or coding agent works in this repo:
 3. Keep templates tool-agnostic. Mention Paperclip, GitHub Issues, Linear, Jira, Copilot, Codex, Claude, and Hermes only as examples unless a file is explicitly tool-specific.
 4. Do not include private customer data, secrets, production credentials, private repo links, or app-specific implementation details.
 5. Public examples must use synthetic data and generic product names.
-6. When creating new templates, include:
+6. The changelog component is part of the starter kit. Use `templates/changelog-entry-template.md` and `docs/changelog-workflow.md` when work is dependent, multi-issue, production-sensitive, or needs a downstream activation decision.
+7. When creating new templates, include:
    - routing / ownership
    - problem or intent
    - acceptance criteria
@@ -22,6 +23,6 @@ When an AI assistant or coding agent works in this repo:
    - safety boundaries
    - validation gates
    - completion evidence
-7. For UI workflows, require browser-visible evidence such as screenshots, traces, or exact manual QA steps.
-8. Make it clear that Paperclip or any other agent board only uses these templates if they are copied into an issue, linked in project docs, or referenced by project/agent instructions.
-9. When describing Hermes posting issues to Paperclip, say Hermes uses board-authorized authentication as the board user/operator.
+8. For UI workflows, require browser-visible evidence such as screenshots, traces, or exact manual QA steps.
+9. Make it clear that Paperclip or any other agent board only uses these templates if they are copied into an issue, linked in project docs, or referenced by project/agent instructions.
+10. When describing Hermes posting issues to Paperclip, say Hermes uses board-authorized authentication as the board user/operator.

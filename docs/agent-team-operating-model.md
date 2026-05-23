@@ -24,6 +24,7 @@ This is a lightweight operating model for reviewable autonomous agent work.
 - Confirms repo/workspace wiring.
 - Chooses the right implementation path.
 - Keeps lifecycle state coherent: backlog, todo, in_progress, in_review, done, blocked.
+- Maintains the changelog or decision log when work spans multiple issues, review steps, or downstream activation decisions.
 
 ### Coding agent
 
@@ -68,6 +69,7 @@ Good evidence includes:
 - fixture data summary
 - mutation boundary
 - known limitations and follow-up issues
+- changelog or decision-log update for multi-issue work
 
 ## Default rule
 
