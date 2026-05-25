@@ -53,40 +53,35 @@ This is the main point: the template is not just a form. It is the shared contra
 
 Templates only help if something in your workflow explicitly points to them.
 
-A common pattern:
+The simplest pattern is to point your assistant or agent context at this repo and
+tell it to follow the examples and templates when creating agent work.
 
-1. Put these templates in a repo, knowledge base, or team docs folder.
-2. Start with `templates/mini-prd-template.md` when the human intent is still rough.
-3. Use `docs/source-of-truth-model.md` to make clear which docs, repos, trackers, and reviewers are authoritative.
-4. Tell your local assistant, supervisor agent, or project `AGENTS.md` to read the relevant template before creating issues.
-5. When the assistant creates an issue, it copies the relevant sections into the issue body.
-6. The agent board or tracker stores that issue as the execution contract.
-7. Implementation and reviewer agents receive the issue body as task context.
-8. For dependent or multi-issue work, the changelog captures the durable narrative: what changed, what evidence was reviewed, and whether the next issue can be activated.
-9. Completion evidence is posted back to the same issue or PR/MR.
-
-For example, if Hermes is acting as the local assistant, you can say:
+For example, add an instruction like this to your project `AGENTS.md`, team
+runbook, or agent operating notes:
 
 ```text
-Use templates/mini-prd-template.md if my intent is rough.
-Use templates/agent-issue-template.md as the baseline.
-Turn this mini-PRD/user story into a structured agent issue.
-Include acceptance criteria, safety boundaries, validation gates, and completion evidence fields.
-Use docs/source-of-truth-model.md to identify authoritative docs, repos, trackers, and approval owners.
-Keep it in backlog unless I explicitly say to activate an agent.
+Follow the examples and templates in the agent-team starter kit:
+https://github.com/vaughngit/agent-team-starter-kit.
+
+Use them to turn rough human intent into structured agent issues with
+acceptance criteria, safety boundaries, validation gates, changelog
+expectations, and completion evidence.
+
+Require the agent to return receipts before the work is considered reviewable.
 ```
 
-If you want this to happen automatically in a project, add an instruction to that project's `AGENTS.md` or team runbook:
+If you want tighter local control, copy the templates into your project repo or
+knowledge base and point the same instruction at that local path instead.
+
+For a more explicit project-local instruction:
 
 ```text
-Before creating agent issues, read templates/agent-issue-template.md.
-If the human intent is rough, first summarize it with templates/mini-prd-template.md.
-Use docs/source-of-truth-model.md to identify authoritative docs, repos, trackers, secrets, and approval owners.
-For UI changes, also read templates/ui-evidence-validation-template.md.
-For completion comments, use templates/completion-evidence-template.md.
-For dependent or multi-issue work, use templates/changelog-entry-template.md and docs/changelog-workflow.md.
-Use docs/when-to-use-a-full-prd.md only when the work needs broader review, formal approval, or long-term product framing.
-For migrations or workflow replacements, consider templates/advanced/context-equivalence-checklist.md.
+Follow the starter-kit templates for this project.
+
+Before creating agent issues, read the issue, validation, changelog, and
+completion-evidence templates. Use them to turn rough human intent into a
+structured issue with acceptance criteria, safety boundaries, validation gates,
+and evidence requirements.
 ```
 
 ## Use with Paperclip or other agent systems
