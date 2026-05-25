@@ -7,12 +7,13 @@ This is a lightweight operating model for reviewable autonomous agent work.
 ### Human / owner
 
 - Provides product intent and risk tolerance.
+- Identifies or confirms the source of truth for requirements, approval, and sensitive boundaries.
 - Approves scope, credentials, production mutations, merge, and deploy when required.
 - Reviews evidence before accepting work.
 
 ### Local assistant / operator
 
-- Helps turn intent into structured issues.
+- Helps turn intent into mini-PRDs and structured issues.
 - Finds source-of-truth docs and context.
 - Uses board-authorized credentials, when explicitly configured, to create or update issues as the board user/operator.
 - Updates trackers and handoff notes.

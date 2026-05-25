@@ -45,6 +45,16 @@ Use this as the final comment or handoff note when an agent says work is ready f
 - Secrets used by pointer only:
 - Human approval required before next step:
 
+### Human decision point
+
+What should the human/reviewer decide from these receipts?
+
+- [ ] Accept as done
+- [ ] Request changes
+- [ ] Approve merge/deploy/activation, if separately allowed by project rules
+- [ ] Create follow-up issue(s)
+- [ ] Stop or defer
+
 ### Review notes
 
 - Reviewer should inspect:

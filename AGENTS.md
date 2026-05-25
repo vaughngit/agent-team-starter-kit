@@ -6,7 +6,7 @@ When an AI assistant or coding agent works in this repo:
 
 1. Preserve the core framing: agent teams need handoffs, not just prompts.
 2. Emphasize the team workflow:
-   - human provides PRD / user story / rough vision
+   - human provides mini-PRD / user story / rough vision
    - local assistant or supervisor agent turns it into a structured issue
    - implementation agent works from the issue contract
    - reviewer/QA agent checks the receipts
@@ -23,6 +23,10 @@ When an AI assistant or coding agent works in this repo:
    - safety boundaries
    - validation gates
    - completion evidence
-8. For UI workflows, require browser-visible evidence such as screenshots, traces, or exact manual QA steps.
-9. Make it clear that Paperclip or any other agent board only uses these templates if they are copied into an issue, linked in project docs, or referenced by project/agent instructions.
-10. When describing Hermes posting issues to Paperclip, say Hermes uses board-authorized authentication as the board user/operator.
+   - human decision point
+8. Use `templates/mini-prd-template.md` for rough intent that needs to become agent-ready work, but keep it lightweight.
+9. Use `docs/when-to-use-a-full-prd.md` only when broader review, formal approval, or long-term product framing is actually useful.
+10. Keep migration/cutover-specific guidance optional or advanced; do not make the starter kit feel like a production cutover framework.
+11. For UI workflows, require browser-visible evidence such as screenshots, traces, or exact manual QA steps.
+12. Make it clear that Paperclip or any other agent board only uses these templates if they are copied into an issue, linked in project docs, or referenced by project/agent instructions.
+13. When describing Hermes posting issues to Paperclip, say Hermes uses board-authorized authentication as the board user/operator.
