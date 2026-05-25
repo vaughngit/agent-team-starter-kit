@@ -70,20 +70,6 @@ expectations, and completion evidence.
 Require the agent to return receipts before the work is considered reviewable.
 ```
 
-If you want tighter local control, copy the templates into your project repo or
-knowledge base and point the same instruction at that local path instead.
-
-For a more explicit project-local instruction:
-
-```text
-Follow the starter-kit templates for this project.
-
-Before creating agent issues, read the issue, validation, changelog, and
-completion-evidence templates. Use them to turn rough human intent into a
-structured issue with acceptance criteria, safety boundaries, validation gates,
-and evidence requirements.
-```
-
 ## Use with Paperclip or other agent systems
 
 These templates are intentionally tool-agnostic. They work best with systems that can track issues, agents, branches, comments, and review artifacts.
