@@ -3,6 +3,8 @@
 > **Status: experimental — preview, not v1.**
 > This template is being piloted in a real Paperclip project. The pilot retrospective has not yet been written; the templates here may change after pilot completion. Treat this as a working draft to learn from, not a stable contract. When the pilot retrospective exists, this file should reference it as the canonical adoption example.
 
+**Maintainer note (preview-status content).** When revising these templates, keep the live-agent setup, PR/MR status mirror, reviewer independence, and runtime context boundary explicit. Editing this regimen does not update live Paperclip agents — see `paperclip-review-agent-setup.md` for the live-agent install step that any adoption must perform separately.
+
 Use this template when a Paperclip-backed project wants PR/MR review to trigger structured multi-agent review instead of treating "PR opened" or "MR opened" as completion.
 
 This is a coordination pattern. It does not replace project-specific delivery rules, human approval, CI, code review, or deployment checks.
@@ -42,6 +44,95 @@ Opening a PR/MR starts review. It is not completion.
 9. **Orchestrator independence.** The orchestrator must not be the implementation owner of the PR/MR under review. The implementation owner responds to findings; the orchestrator creates and routes review lanes and aggregates decisions.
 10. **Role definitions must be explicit, not inferable.** "The CTO orchestrates" is ambiguous when the CTO is also the implementation owner. Spell out who orchestrates each pilot, not just by title — by their relationship to the PR/MR under review. This rule exists because role-definition ambiguity survived multiple review passes in the original pilot and was only caught when a human questioned the assignment.
 11. **Reviewer independence.** The implementation owner must not serve as a review-lane reviewer for their own PR/MR. If a project lacks enough reviewer personas to honor this, the orchestrator records the lane as blocked or routes to a human reviewer rather than letting the owner approve their own work.
+
+## The Review System
+
+This regimen is a system, not a checklist. Four axes define it: the **lifecycle** every PR/MR moves through, the **materialization** that gives each state a canonical artifact, the **authority** model that says who may act on what, and the documented **behavior under change** that keeps the system coherent when state mutates mid-review.
+
+This section is scaffolding. It names the axes, points at the existing sections that fill them in, and marks the cells the adopting project's pilot retrospective is expected to close. The mechanics that follow (lanes, output contract, iteration rules, phases) fill in cells that are already settled by the regimen; cells marked TBD here are deliberately left to adopters because they are project-specific or because the founding pilot has not yet generated evidence to close them.
+
+### Axis 1: Lifecycle
+
+Every PR/MR moves through a fixed sequence of states. Each transition has a trigger, an actor, and an exit condition. A change is in exactly one state at a time.
+
+| State | Trigger to enter | Actor responsible | Exit condition |
+|---|---|---|---|
+| `open` | Implementation owner pushes the PR/MR and links it to the parent issue | Implementation owner | PR/MR exists with description and linked parent issue; parent moves to `in_review` |
+| `lanes-enumerated` | Parent enters `in_review`. Phase 1: orchestrator decides lanes manually, optionally considering implementation-owner suggestions. Phase 2: plugin classifies from diff. | Orchestrator | Required lanes named, child issues created in `backlog`, matrix posted on parent, initial PR/MR status mirror posted |
+| `under-review` | Orchestrator activates lanes one at a time (`backlog -> todo`) per the activation rule | Orchestrator | All required lanes have posted a decision against the current head SHA |
+| `aggregated` | Last required lane returns a decision | Orchestrator | Parent matrix refreshed; PR/MR status mirror updated; conflicts (if any) quoted in matrix `Conflicts` section; any `request_changes` lane routed back to implementation; any `blocked` lane escalated |
+| `decision-ready` | Aggregation complete with all required lanes approved or waived, no unresolved conflicts, no unresolved `request_changes`, and no blocked lanes | Orchestrator | Approval packet ready for human, mirrored on PR/MR |
+| `merged-or-reverted` | Human merges, reverts, or pushes back to `under-review` | Human owner | PR/MR closed; parent moves to `done` or back to `in_progress` |
+
+Cells TBD by your project's pilot:
+- Whether each lifecycle state needs a Paperclip-status counterpart on the parent issue, or whether it remains implicit in `in_review` plus matrix-comment content.
+- Whether `aggregated` and `decision-ready` are actually distinguishable in your project's workflow, or collapse into one state.
+
+### Axis 2: Materialization
+
+For every fact the system holds, exactly one location is the source of truth. Everything else is a derived view or a pointer. Two systems of record for the same fact is a regimen bug — your pilot should expose any cases where it happens.
+
+| Fact | Source of truth | Derived views |
+|---|---|---|
+| Required lanes for this PR/MR | Parent matrix comment | Child issue titles |
+| Per-lane decision | Child issue status + decision comment | Parent matrix entry |
+| Git-provider-visible lane status | Parent matrix comment + child issue states | Mandatory PR/MR status mirror comment, updated when lanes are enumerated and when any lane resolves, blocks, or is waived |
+| Reviewed SHA | Reviewed-SHA field in the decision comment | Matrix entry |
+| Evidence for a decision | Path or URL cited in the decision comment | None — evidence is not duplicated; only pointed to |
+| Waivers (which lane, by whom, why) | Inline annotation on the lane entry in the matrix comment | None |
+| Conflicts between lanes | Matrix comment `Conflicts` section, quoting both decisions verbatim | None |
+| Authority transfer (orchestrator change, redirect) | Comment on the affected issue | Project's own pilot tracking file, if one exists |
+| Final approval packet | Parent matrix comment `Final approval packet` section | Short mirror comment on the PR/MR linking back to the parent |
+| Pilot findings during your Phase 1 | Project-local pilot tracking file (outside the live Paperclip issue) | None |
+| Post-pilot lessons | Project's own retrospective document | None |
+
+Cells TBD by your project's pilot:
+- Where ratification records live when a new orchestrator inherits prior decisions from a non-independent orchestrator (open question the founding pilot surfaced; resolution may vary by project).
+- Whether cross-PR/MR evidence reuse ever happens, and if so the discovery path.
+- Whether the matrix `Conflicts` section is the right home when a conflict is only partially resolved.
+
+### Axis 3: Authority
+
+Each role has named powers and named limits. The limits matter as much as the powers — they are the seams the regimen relies on for independence.
+
+| Role | Authorities | Limits |
+|---|---|---|
+| Implementation owner | Opens the PR/MR; pushes fixes in response to findings; signals affected lanes are ready for re-review after pushing a fix; escalates to human after two iteration rounds with unresolved `request_changes` (per Iteration Rule) | May not orchestrate; may not approve its own lanes; may not waive lanes |
+| Orchestrator | Enumerates required lanes; routes them one at a time; refreshes the matrix; maintains the PR/MR status mirror; surfaces conflicts to human; manages reviewer budget; calls budget-extension decisions | May not be the implementation owner (Principle 9); may not aggregate or vote across lane decisions (Principle 6); may not waive lanes without a written rule (Principle 3) |
+| Reviewer (per lane) | Posts a decision; cites evidence; flags residual risk; requests budget extension; includes the PR/MR status mirror line per the Reviewer Output Contract | May not waive itself (Principle 3); may not approve without verifiable evidence (Principle 2); may not carry forward evidence across SHAs (Principle 4); may not serve as reviewer for its own implementation work (Principle 11) |
+| Human owner | Final merge, revert, or accept; resolves conflicts; grants budget extensions; may override any decision with a recorded reason | Should not be required for routine state transitions — that is orchestrator-flavored work; overriding without a recorded reason undermines the audit trail |
+
+Cells TBD by your project's pilot:
+- May the orchestrator reject a lane request from the implementation owner? Under what rule?
+- May a reviewer recuse itself and request re-assignment?
+- May the implementation owner dispute a finding — and if so, does that mutate the reviewer's posted decision or surface as a separate comment for the orchestrator to route?
+- When the orchestrator invokes the human, is that a comment, a `currentParticipant` mutation, an out-of-band ping, or some combination?
+- Does the human's "override with recorded reason" power also apply mid-review (e.g., forcing a lane closed), or only at the final merge gate?
+
+### Axis 4: Behavior under change
+
+State changes mid-review are not edge cases — they are the normal mode for any non-trivial PR/MR. The system needs documented behavior for each kind of change, not improvisation.
+
+| Change | Documented behavior | Reference |
+|---|---|---|
+| Implementation owner pushes a new SHA | Affected child issues reset; unaffected children retain prior approval with prior evidence cited | Iteration Rule; Lane Reset Classifier |
+| Two lanes return conflicting decisions | Orchestrator quotes both in matrix `Conflicts` section, routes parent to human; does not aggregate | Conflict Resolution; Principle 6 |
+| Reviewer wants to exceed budget | Reviewer posts budget-extension request comment on its child issue; orchestrator or human decides | Reviewer Budget |
+| Orchestrator changes mid-review (e.g., redirect for independence) | TBD — open question: re-review all prior decisions, ratify if reviewer independence held, or case-by-case with recorded reason. Founding pilot left this for the adopting project to decide. | Open |
+| Spec or contract changes mid-review (new principle or new mandatory rule added) | TBD — same shape as the orchestrator-change row above. A mid-pilot mutation creates a pre/post split among lane decisions: ones decided under the old contract vs. ones bound by the new. Pick a rule in your retrospective. | Open |
+| Implementation owner goes silent or abandons | TBD | Open |
+| Reviewer goes silent or abandons | TBD | Open |
+| PR/MR is rebased or squashed (SHAs rewritten) | TBD | Open |
+| Required lane is added or removed after enumeration | TBD | Open |
+| PR/MR is closed without merge while review is in flight | TBD | Open |
+| Parent's `executionState` or `executionPolicy` is `null` (no policy attached) | Fall back to comment tagging the reviewer rather than mutating `currentParticipant` | Known Gotchas |
+
+Cells TBD by your project's pilot:
+- Most rows above. The pilot is expected to bite on a subset; the retrospective closes those rows first and explicitly defers the rest.
+
+---
+
+Each axis above is a contract the regimen owes its users. The sections that follow (Default Lanes, How This Maps Onto Paperclip, Lifecycle, Phased Rollout, Orchestrator Role, Implementation Owner Role, Child Review Issue Rule, Iteration Rule, Lane Reset Classifier, Conflict Resolution, Reviewer Budget, Evidence Storage, Emergency Bypass, Completion Rule, Known Gotchas) fill in the mechanics for the cells that are already decided. Your own pilot retrospective is the venue for closing the TBD cells — and for naming any new cells the pilot surfaces that this scaffolding did not anticipate.
 
 ## Default Lanes
 
