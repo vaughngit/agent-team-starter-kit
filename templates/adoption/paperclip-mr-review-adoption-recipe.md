@@ -206,7 +206,22 @@ The human reads this, opens whichever child issues they want to spot-check, and 
 
 Post or update this approval packet on the PR/MR as well. The parent Paperclip issue can own the detailed record, but the PR/MR must show the current decision-ready state.
 
-## Step 14: Write the retrospective
+## Step 14: Close out after merge or rejection
+
+After the human merges, rejects, closes, or reverts the PR/MR, the human signals the orchestrator with the outcome.
+
+If merged, the orchestrator:
+
+- marks the parent Paperclip implementation issue `done`;
+- posts a close-out comment with the merge commit SHA;
+- includes deploy info if applicable;
+- links back to the final approval packet.
+
+If rejected, closed without merge, or reverted, the orchestrator moves the parent back to the appropriate active state and records the reason. The PR/MR is not fully closed out just because the git-provider state changed; Paperclip must be updated too.
+
+Phase 2 should replace the human signal with a git-provider merge/close/revert webhook handled by the Paperclip plugin.
+
+## Step 15: Write the retrospective
 
 Append to the tracking file (and, if you maintain a project-level copy of the regimen spec, to that doc as well):
 
@@ -216,11 +231,11 @@ Append to the tracking file (and, if you maintain a project-level copy of the re
 - Surprising Paperclip interactions (especially around `currentParticipant`, execution policies, child issue routing).
 - Observed token/time cost per PR/MR.
 - Pre-conditions a Phase 2 plugin would need to assume.
-- Whether reviewer-agent capability text was sufficient or agents still missed the PR/MR mirror/context-boundary rule.
+- Whether reviewer-agent and orchestrator capability text was sufficient or agents still missed the PR/MR mirror/context-boundary/close-out rule.
 - Whether required review context was available in the repo/PR/MR/issues or had to be copied out of an external knowledge base.
 - Whether the pattern should be expanded to more PR/MRs as-is, expanded with changes, or abandoned.
 
-## Step 15: Decide on broader adoption
+## Step 16: Decide on broader adoption
 
 Only after the retrospective is written:
 
@@ -230,7 +245,7 @@ Only after the retrospective is written:
 
 Do not consider extracting any project-specific changes back into shared starter-kit templates until the pilot has clearly succeeded.
 
-## Step 16: Promote the local copy to v1, or keep it preview
+## Step 17: Promote the local copy to v1, or keep it preview
 
 Do not remove preview language until the regimen doc's "Promotion To v1" criteria are met. If the pilot was inconclusive, keep the template marked preview and write down what evidence is still missing.
 
@@ -245,6 +260,7 @@ Things to **not** do during the pilot:
 - Do **not** require reviewer agents to mount a private knowledge base or second brain. Put required runtime context in the repo, PR/MR, parent issue, or child issue.
 - Do **not** leave completed review lanes visible only in Paperclip. The PR/MR must show current lane state.
 - Do **not** update only the templates and assume live Paperclip agents changed. Verify live agent configuration.
+- Do **not** leave the parent issue `in_review` after the PR/MR is merged. Close out Paperclip with merge/deploy evidence.
 - Do **not** skip the retrospective. The retrospective is what makes the pilot worth running.
 - Do **not** build a plugin before manual orchestration has been observed working end-to-end.
 - Do **not** treat the templates as immutable. They are experimental. If your pilot surfaces a real flaw, fix the templates.

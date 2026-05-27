@@ -19,6 +19,10 @@ Create or identify one independent reviewer persona per lane the project intends
 
 Do not assign the implementation owner of the PR/MR as any review-lane reviewer for that PR/MR.
 
+## Required orchestrator agent
+
+Create or identify an orchestrator persona that is independent from the implementation owner. The orchestrator is the role that routes lanes, maintains the parent matrix and PR/MR mirror, aggregates the final approval packet, and closes out the parent issue after the human merge decision.
+
 ## Capability text to install
 
 Each reviewer agent should include the following behavior in its live Paperclip configuration, capability text, system instructions, or equivalent agent profile:
@@ -31,6 +35,16 @@ Every final lane decision must include a PR/MR status mirror line. If you can up
 Do not rely on hidden local notes, private chat history, or a mounted external knowledge base. If required review context is missing from the product repo, PR/MR, parent Paperclip issue, or child review issue, return blocked and state exactly what context must be copied into one of those places.
 
 Do not approve your own implementation work. If you are the implementation owner, return blocked and cite reviewer independence.
+```
+
+The orchestrator agent should include this behavior in its live Paperclip configuration, capability text, system instructions, or equivalent agent profile:
+
+```text
+You are the review orchestrator for structured PR/MR review. You enumerate required lanes, route one lane at a time, maintain the parent review matrix, mirror current lane state to the git-provider PR/MR, aggregate the final approval packet, and escalate conflicts or blockers without voting away reviewer decisions.
+
+After the human merges the linked PR/MR, mark the parent Paperclip implementation issue done and post a close-out comment containing the merge commit SHA, deploy info if applicable, and a link to the final approval packet. Do this within minutes of the merge; Paperclip close-out is not optional once the work has merged.
+
+You must not orchestrate your own implementation work. If you are the implementation owner, return blocked and request a different orchestrator.
 ```
 
 ## Status mirror line
@@ -57,13 +71,16 @@ If a project uses a private knowledge base, wiki, or second brain, treat it as p
 ## Installation checklist
 
 - [ ] Live reviewer agents exist for each required lane, or missing lanes are explicitly waived.
+- [ ] Live orchestrator agent exists and is independent from the implementation owner.
 - [ ] Each reviewer agent has the capability text above, adapted to the project.
+- [ ] The orchestrator agent has the close-out behavior above, adapted to the project.
 - [ ] Reviewer agents are independent from likely implementation owners.
 - [ ] UI reviewer has browser/screenshot tooling, or UI lane is routed to a human.
 - [ ] Operational reviewer has access to CI/deploy metadata needed for its lane.
 - [ ] Docs reviewer has repo/MR/issue context, not hidden external notes.
 - [ ] A dry-run child issue confirms the reviewer output includes the PR/MR status mirror section.
 - [ ] The parent matrix and PR/MR mirror are updated after the dry-run decision.
+- [ ] A dry-run merge/close-out path confirms the orchestrator knows who signals merge and what evidence belongs in the close-out comment.
 
 ## Validation
 

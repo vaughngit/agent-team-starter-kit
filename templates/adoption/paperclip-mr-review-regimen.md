@@ -62,7 +62,7 @@ Every PR/MR moves through a fixed sequence of states. Each transition has a trig
 | `under-review` | Orchestrator activates lanes one at a time (`backlog -> todo`) per the activation rule | Orchestrator | All required lanes have posted a decision against the current head SHA |
 | `aggregated` | Last required lane returns a decision | Orchestrator | Parent matrix refreshed; PR/MR status mirror updated; conflicts (if any) quoted in matrix `Conflicts` section; any `request_changes` lane routed back to implementation; any `blocked` lane escalated |
 | `decision-ready` | Aggregation complete with all required lanes approved or waived, no unresolved conflicts, no unresolved `request_changes`, and no blocked lanes | Orchestrator | Approval packet ready for human, mirrored on PR/MR |
-| `merged-or-reverted` | Human merges, reverts, or pushes back to `under-review` | Human owner | PR/MR closed; parent moves to `done` or back to `in_progress` |
+| `merged-or-reverted` | Human merges, reverts, or pushes back to `under-review` | Human owner performs the git-provider action; orchestrator performs Paperclip close-out within minutes of merge/revert notification | PR/MR closed; parent moves to `done` with close-out comment, or back to `in_progress`/`under-review` if merge is rejected or reverted |
 
 Cells TBD by your project's pilot:
 - Whether each lifecycle state needs a Paperclip-status counterpart on the parent issue, or whether it remains implicit in `in_review` plus matrix-comment content.
@@ -83,6 +83,7 @@ For every fact the system holds, exactly one location is the source of truth. Ev
 | Conflicts between lanes | Matrix comment `Conflicts` section, quoting both decisions verbatim | None |
 | Authority transfer (orchestrator change, redirect) | Comment on the affected issue | Project's own pilot tracking file, if one exists |
 | Final approval packet | Parent matrix comment `Final approval packet` section | Short mirror comment on the PR/MR linking back to the parent |
+| Post-merge close-out | Parent issue close-out comment with merge SHA, deploy info if applicable, and final approval packet link | Git-provider PR/MR merge/deploy metadata |
 | Pilot findings during your Phase 1 | Project-local pilot tracking file (outside the live Paperclip issue) | None |
 | Post-pilot lessons | Project's own retrospective document | None |
 
@@ -98,7 +99,7 @@ Each role has named powers and named limits. The limits matter as much as the po
 | Role | Authorities | Limits |
 |---|---|---|
 | Implementation owner | Opens the PR/MR; pushes fixes in response to findings; signals affected lanes are ready for re-review after pushing a fix; escalates to human after two iteration rounds with unresolved `request_changes` (per Iteration Rule) | May not orchestrate; may not approve its own lanes; may not waive lanes |
-| Orchestrator | Enumerates required lanes; routes them one at a time; refreshes the matrix; maintains the PR/MR status mirror; surfaces conflicts to human; manages reviewer budget; calls budget-extension decisions | May not be the implementation owner (Principle 9); may not aggregate or vote across lane decisions (Principle 6); may not waive lanes without a written rule (Principle 3) |
+| Orchestrator | Enumerates required lanes; routes them one at a time; refreshes the matrix; maintains the PR/MR status mirror; surfaces conflicts to human; manages reviewer budget; calls budget-extension decisions; closes out the parent issue after merge by setting it to `done` and posting a close-out comment with merge SHA, deploy info if applicable, and final approval packet link | May not be the implementation owner (Principle 9); may not aggregate or vote across lane decisions (Principle 6); may not waive lanes without a written rule (Principle 3) |
 | Reviewer (per lane) | Posts a decision; cites evidence; flags residual risk; requests budget extension; includes the PR/MR status mirror line per the Reviewer Output Contract | May not waive itself (Principle 3); may not approve without verifiable evidence (Principle 2); may not carry forward evidence across SHAs (Principle 4); may not serve as reviewer for its own implementation work (Principle 11) |
 | Human owner | Final merge, revert, or accept; resolves conflicts; grants budget extensions; may override any decision with a recorded reason | Should not be required for routine state transitions — that is orchestrator-flavored work; overriding without a recorded reason undermines the audit trail |
 
@@ -120,6 +121,7 @@ State changes mid-review are not edge cases — they are the normal mode for any
 | Reviewer wants to exceed budget | Reviewer posts budget-extension request comment on its child issue; orchestrator or human decides | Reviewer Budget |
 | Orchestrator changes mid-review (e.g., redirect for independence) | TBD — open question: re-review all prior decisions, ratify if reviewer independence held, or case-by-case with recorded reason. Founding pilot left this for the adopting project to decide. | Open |
 | Spec or contract changes mid-review (new principle or new mandatory rule added) | TBD — same shape as the orchestrator-change row above. A mid-pilot mutation creates a pre/post split among lane decisions: ones decided under the old contract vs. ones bound by the new. Pick a rule in your retrospective. | Open |
+| Human merges the PR/MR after final approval packet | Human merge is the git-provider action; Phase 1 human pings orchestrator with "PR/MR merged, please close out"; orchestrator marks parent issue `done` and posts close-out comment with merge commit, deploy info if applicable, and approval packet link | Post-merge close-out rule |
 | Implementation owner goes silent or abandons | TBD | Open |
 | Reviewer goes silent or abandons | TBD | Open |
 | PR/MR is rebased or squashed (SHAs rewritten) | TBD | Open |
@@ -253,6 +255,7 @@ The orchestrator:
 - Escalates conflicts and blockers.
 - Records waivers and reasons.
 - Produces the final approval packet.
+- After human merge/revert, closes out the parent issue with merge SHA, deploy info if applicable, and approval packet link.
 
 The orchestrator must not be the implementation owner of the PR/MR under review.
 
