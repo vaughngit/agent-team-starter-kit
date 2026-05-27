@@ -17,6 +17,9 @@ Budget: <N reviewers, up to M iterations>
 Orchestrator independence:
 - [ ] Orchestrator is not the implementation owner of this PR/MR.
 
+Reviewer independence:
+- [ ] No review-lane reviewer is the implementation owner of this PR/MR.
+
 Required lanes:
 - [ ] Correctness — child issue: <ISSUE-ID or pending>
 - [ ] Operational Risk — child issue: <ISSUE-ID or pending>
@@ -57,6 +60,13 @@ Iteration state:
 Budget extension requests:
 - <none, or which reviewer asked, what they asked for, decision>
 
+Emergency bypass:
+- Status: none | requested | approved | rejected
+- Approver:
+- Incomplete/stale lanes:
+- Risk owner:
+- Follow-up issues:
+
 Final approval packet:
 - Status: not ready | ready for human decision | blocked
 - Recommendation:
@@ -70,3 +80,4 @@ Final approval packet:
 - Do not mark the parent issue done based only on the existence of a PR/MR or on the matrix saying "ready" — that is the human's call.
 - Keep evidence links re-openable by the human reviewer. Links to artifacts on a project VM or CI artifact store are fine; raw artifacts committed to the product repo are usually wrong (see "Evidence Storage" in the regimen doc).
 - When a lane is `waived`, the waiver text must include the reason. "Not applicable" alone is not sufficient.
+- When an emergency bypass is approved, keep the matrix `blocked` or `not ready` until the bypass record includes approver, risk owner, rollback/mitigation plan, and follow-up issues.

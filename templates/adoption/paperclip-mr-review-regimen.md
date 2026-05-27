@@ -41,6 +41,7 @@ Opening a PR/MR starts review. It is not completion.
 8. **Auto-merge stays off by default.** The regimen makes human approval easier; it does not silently merge production-impacting work.
 9. **Orchestrator independence.** The orchestrator must not be the implementation owner of the PR/MR under review. The implementation owner responds to findings; the orchestrator creates and routes review lanes and aggregates decisions.
 10. **Role definitions must be explicit, not inferable.** "The CTO orchestrates" is ambiguous when the CTO is also the implementation owner. Spell out who orchestrates each pilot, not just by title — by their relationship to the PR/MR under review. This rule exists because role-definition ambiguity survived multiple review passes in the original pilot and was only caught when a human questioned the assignment.
+11. **Reviewer independence.** The implementation owner must not serve as a review-lane reviewer for their own PR/MR. If a project lacks enough reviewer personas to honor this, the orchestrator records the lane as blocked or routes to a human reviewer rather than letting the owner approve their own work.
 
 ## Default Lanes
 
@@ -118,6 +119,8 @@ The plugin subscribes to Paperclip's in-process event bus (`server/src/services/
 - Subscribes to `issue.updated` on child issues to recompute parent readiness and refresh the matrix as decisions land.
 - Declares an inbound webhook in the manifest for PR/MR events (see Phase 3).
 
+The plugin must be idempotent. Use the git provider delivery/event ID plus project ID, PR/MR URL or number, and head SHA as the idempotency key. A retried webhook or repeated `issue.updated` event must update the same parent matrix and child issues, not create duplicate review lanes.
+
 Effort estimate: comparable to any Paperclip plugin that uses the same SDK surface (`ctx.events.subscribe`, `ctx.api.issues.*`, manifest webhooks). If your project will also build other Paperclip plugins (e.g., a Linear bridge), ship one first to pay the SDK learning tax once.
 
 ### Phase 3: Inbound Git-Provider Webhook
@@ -190,6 +193,21 @@ When the implementation owner pushes a new commit:
 
 Done criterion for the implementation owner: every required child issue is `done` against the current head SHA, or an unresolved finding has been surfaced to the human. After two review rounds with unresolved `request_changes`, stop and escalate rather than looping indefinitely.
 
+## Lane Reset Classifier
+
+Use a project-specific classifier to decide which lanes reset after a new push. Start conservative, then tune after the pilot retrospective.
+
+| Changed path or signal | Reset lanes |
+|---|---|
+| `frontend/**`, `app/**`, UI components, routes, styles, accessibility markup | UI Behavior, Correctness |
+| `backend/**`, API handlers, auth, permissions, data mutations, migrations | Correctness, Operational Risk |
+| `infra/**`, deployment manifests, CI, dependency locks, env/config, secrets wiring | Operational Risk, Correctness when runtime behavior changes |
+| `docs/**`, runbooks, setup, operator-facing behavior descriptions | Docs / Operator Context |
+| Test-only changes | Correctness if the tests alter confidence for changed behavior; otherwise record no reset with reason |
+| Changelog, issue templates, process docs | Docs / Operator Context, Operational Risk if activation/deployment semantics change |
+
+The classifier is guidance, not an excuse to skip judgment. If a change crosses boundaries, reset every affected lane.
+
 ## Conflict Resolution
 
 When two child review issues return conflicting decisions on overlapping scope (e.g., Correctness approves auth changes while Operational flags them as deploy-risky), the orchestrator:
@@ -221,7 +239,26 @@ Recommended storage:
 - CI job artifacts (the git provider's native artifact store) are also acceptable storage for evidence that was produced during CI.
 - Commit artifacts to the product repo **only** after explicit scrubbing and labeling as sanitized fixtures (e.g., under a `fixtures/` directory with redacted test data).
 
+Retention and access:
+- Evidence must remain readable by the human approver for at least the lifetime of the PR/MR plus the project's normal rollback window.
+- Access should be no broader than the people and agents allowed to review the PR/MR. Do not store sensitive evidence in a public bucket, public CI artifact, or broadly shared drive.
+- Reviewer comments should state the evidence retention location and any access requirement. If evidence must be deleted quickly, record that in the parent matrix and keep a sanitized summary.
+
 When in doubt, link, don't commit. The product repo is not the right home for raw browser captures, transaction logs, or anything that includes production identifiers.
+
+## Emergency Bypass
+
+A human may merge, deploy, or accept a PR/MR before every lane is complete only through an explicit bypass.
+
+Required bypass record on the parent issue:
+- Who approved the bypass.
+- Which lanes were incomplete, blocked, or stale.
+- Why waiting would be riskier than proceeding.
+- Risk owner.
+- Rollback or mitigation plan.
+- Follow-up issue for every skipped lane or unresolved finding.
+
+The orchestrator may prepare the bypass packet, but only a human owner can approve it. Bypass is not a normal success path and should be counted in the retrospective.
 
 ## Completion Rule
 
@@ -241,6 +278,19 @@ Things adopters will likely hit. Surfaced from the initial pilot.
 - **Bulk activation burns budget.** If all child issues are moved to `todo` at once, every reviewer wakes simultaneously and the reviewer-budget cap is hit before findings can be observed. Always activate one lane at a time.
 - **Role definitions inferred from job titles fail.** "CTO orchestrates" doesn't survive contact with reality when CTO is also the implementation owner. Always state the orchestrator's relationship to the PR/MR under review, not just their title.
 - **A draft issue body in a separate tracking file is easier to iterate than the live Paperclip issue.** Author the issue body in a markdown file in your project's adoption notes; paste into Paperclip when ready. This avoids churning the live issue while wording is being refined.
+
+## Promotion To v1
+
+Do not remove the preview warning until at least one real pilot retrospective has been written and reviewed.
+
+Minimum promotion evidence:
+- The pilot tracked orchestrator effort, child-issue state changes, reviewer budget, and time-to-decision.
+- At least one reviewer decision included re-openable evidence that a human could inspect.
+- The process handled either an iteration round, a documented no-finding rationale, a blocked lane, or an explicit bypass.
+- The retrospective identified template changes, and those changes were applied or intentionally rejected with reasons.
+- A second project can follow the adoption recipe without relying on project-specific names, paths, credentials, or hidden context.
+
+When promoted, replace the preview warning with a stable-version note and link to the pilot retrospective as the canonical adoption example.
 
 ## See Also
 

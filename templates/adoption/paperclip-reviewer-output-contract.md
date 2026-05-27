@@ -52,6 +52,14 @@ Paperclip/tool traces:
 
 - <what was not verified and why>
 
+## Evidence Retention / Access
+
+- Location:
+- Expected retention window:
+- Who can access it:
+- Sensitive data present: yes/no
+- If sensitive data is present, sanitization or deletion plan:
+
 ## Recommended Next Action
 
 - <merge/accept with notes | fix and re-review | block on issue | escalate to human>
@@ -73,3 +81,5 @@ Paperclip/tool traces:
 - An `approve` decision on a lane whose runtime was missing required tooling (e.g., UI lane without browser automation) is invalid and should be re-classified as `blocked`.
 - Re-reviews after a pushed fix must produce **new** evidence — new tool-call IDs, new CI URL, new screenshot path with the new SHA in the path. Copying prior evidence forward is not allowed.
 - The reviewer does not aggregate cross-lane signals. "Correctness approved already, so I'll approve UI" is not allowed. Each lane decides on its own evidence.
+- The implementation owner must not approve their own PR/MR in any lane. If assigned, return `blocked` and cite the reviewer-independence rule.
+- Evidence containing sensitive data must identify access and retention expectations. Do not paste raw sensitive evidence into the comment.

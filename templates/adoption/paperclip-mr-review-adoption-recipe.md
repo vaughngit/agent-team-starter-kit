@@ -86,6 +86,8 @@ In the tracking file, write:
 
 **Orchestrator must not be the implementation owner.** Verify this explicitly before continuing. The regimen's Design Principle #10 exists because role-definition ambiguity is the easiest failure mode to repeat — even when the principle is in the doc, adopters infer roles from job titles and miss the independence check.
 
+**Reviewer personas must also be independent from the implementation owner.** If a project has too few reviewers to satisfy this, route the affected lane to a human or mark the lane blocked. Do not let the implementation owner approve their own PR/MR in a lane.
+
 If your project's persona setup means the obvious orchestrator candidate is also the implementation owner, pick a different orchestrator (a peer agent, a supervisor agent, or a human). Do not proceed with the assignment if independence cannot be honored.
 
 ## Step 6: Draft the pilot Paperclip issue body in a file
@@ -101,6 +103,7 @@ Acceptance criteria the issue body must include:
 
 - Pre-pilot gate cleared and recorded.
 - Named orchestrator is accountable, **and is not the implementation owner of the PR/MR under review** (per Design Principle #10).
+- Reviewer personas are independent from the implementation owner, or the affected lanes will be routed to a human/blocked.
 - Child review issues will be created in `backlog`, activated one at a time.
 - Review matrix posted on the parent.
 - Each reviewer posts a decision comment meeting the Reviewer Output Contract with at least one re-openable evidence artifact.
@@ -144,7 +147,21 @@ If any reviewer returns `request_changes`:
 
 If no findings warrant `request_changes` (every lane approves on first pass), record **why** in the tracking file. Either the regimen is producing trustworthy approvals, or reviewers are rubber-stamping. Both are real signals; both matter for the retrospective.
 
-## Step 11: Hand off the approval packet to the human
+## Step 11: Handle emergency bypass if needed
+
+Emergency bypass is allowed only by explicit human decision. Use it when waiting for all lanes would be riskier than proceeding, not when the regimen is merely inconvenient.
+
+Record on the parent issue:
+- human approver;
+- incomplete, blocked, or stale lanes;
+- reason for bypass;
+- risk owner;
+- rollback or mitigation plan;
+- follow-up issues.
+
+Count the bypass in the retrospective.
+
+## Step 12: Hand off the approval packet to the human
 
 Aggregate the lane decisions into a single short summary:
 
@@ -165,7 +182,7 @@ Human decision requested: accept / request-changes / block.
 
 The human reads this, opens whichever child issues they want to spot-check, and decides.
 
-## Step 12: Write the retrospective
+## Step 13: Write the retrospective
 
 Append to the tracking file (and, if you maintain a project-level copy of the regimen spec, to that doc as well):
 
@@ -177,7 +194,7 @@ Append to the tracking file (and, if you maintain a project-level copy of the re
 - Pre-conditions a Phase 2 plugin would need to assume.
 - Whether the pattern should be expanded to more PR/MRs as-is, expanded with changes, or abandoned.
 
-## Step 13: Decide on broader adoption
+## Step 14: Decide on broader adoption
 
 Only after the retrospective is written:
 
@@ -187,12 +204,17 @@ Only after the retrospective is written:
 
 Do not consider extracting any project-specific changes back into shared starter-kit templates until the pilot has clearly succeeded.
 
+## Step 15: Promote the local copy to v1, or keep it preview
+
+Do not remove preview language until the regimen doc's "Promotion To v1" criteria are met. If the pilot was inconclusive, keep the template marked preview and write down what evidence is still missing.
+
 ## Anti-patterns
 
 Things to **not** do during the pilot:
 
 - Do **not** activate multiple pilots at once. One PR/MR at a time.
 - Do **not** assign the orchestrator role to the implementation owner. Even temporarily. Even "just to see what happens." This is the easiest failure mode to repeat.
+- Do **not** assign the implementation owner as a review-lane reviewer for their own PR/MR.
 - Do **not** commit raw browser captures, traces, or logs containing production data to the product repo. Link, don't commit.
 - Do **not** skip the retrospective. The retrospective is what makes the pilot worth running.
 - Do **not** build a plugin before manual orchestration has been observed working end-to-end.

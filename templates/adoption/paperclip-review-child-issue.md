@@ -17,6 +17,7 @@ Use this template to create a child Paperclip issue for one review lane.
 - Status: backlog until intentionally activated
 - Orchestrator (must be different from implementation owner):
 - Implementation owner:
+- Reviewer independence confirmed: yes/no
 
 ## Activation Rule
 
@@ -24,6 +25,7 @@ Use this template to create a child Paperclip issue for one review lane.
 - `todo` means the reviewer may start.
 - Do not move this issue to `todo` until the orchestrator intends to wake this reviewer.
 - Do not bulk-activate sibling child issues; one lane at a time.
+- Do not activate this issue if the named reviewer is the implementation owner of the PR/MR under review.
 
 ## Scope
 
@@ -45,6 +47,7 @@ The reviewer must not:
 - waive their own lane;
 - mark the parent issue done;
 - create unrelated follow-up work without naming it as out of scope.
+- approve their own implementation work.
 
 ## Required Evidence
 
@@ -79,7 +82,8 @@ The reviewer must produce **fresh** evidence for the new SHA. Copying prior evid
 3. Verify against the reviewed SHA.
 4. Run the smallest meaningful checks for this lane.
 5. If your runtime is missing a tool the lane requires (e.g., browser automation for UI lane), do **not** improvise. Mark the decision `blocked` with the missing capability cited; the orchestrator routes the lane to a different reviewer.
-6. Post a final decision comment using `paperclip-reviewer-output-contract.md`.
+6. If you are the implementation owner of the PR/MR, stop and return `blocked`; the orchestrator must route this lane to an independent reviewer.
+7. Post a final decision comment using `paperclip-reviewer-output-contract.md`.
 
 ## Completion
 
