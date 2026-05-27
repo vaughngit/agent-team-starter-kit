@@ -14,6 +14,7 @@ Start with `docs/agent-adoption-protocol.md`, then use the files here that match
 - `paperclip-project-instructions.md` — Paperclip board/project guidance.
 - `paperclip-mr-review-regimen.md` — experimental multi-agent PR/MR review regimen for Paperclip-backed projects (status: preview; see file header).
 - `paperclip-mr-review-adoption-recipe.md` — step-by-step recipe for a new project's first adoption of the regimen.
+- `paperclip-git-provider-webhook-plugin-plan.md` — Phase 2 plugin plan for automating PR/MR webhook handling, close-out, lane reset, and reconciliation.
 - `paperclip-mr-review-matrix.md` — parent issue matrix for tracking required review lanes and decisions.
 - `paperclip-review-agent-setup.md` — live reviewer-agent capability and setup guidance.
 - `paperclip-review-child-issue.md` — child issue template for a single review lane.

@@ -3,7 +3,7 @@
 > **Status: experimental — preview, not v1.**
 > This template is being piloted in a real Paperclip project. The pilot retrospective has not yet been written; the templates here may change after pilot completion. Treat this as a working draft to learn from, not a stable contract. When the pilot retrospective exists, this file should reference it as the canonical adoption example.
 
-**Maintainer note (preview-status content).** When revising these templates, keep the live-agent setup, PR/MR status mirror, reviewer independence, and runtime context boundary explicit. Editing this regimen does not update live Paperclip agents — see `paperclip-review-agent-setup.md` for the live-agent install step that any adoption must perform separately.
+**Maintainer note (preview-status content).** When revising these templates, keep the live-agent setup, PR/MR status mirror, reviewer independence, runtime context boundary, and webhook-vs-polling automation model explicit. Editing this regimen does not update live Paperclip agents — see `paperclip-review-agent-setup.md` for the live-agent install step that any adoption must perform separately. Phase 2 webhook automation is specified in `paperclip-git-provider-webhook-plugin-plan.md`.
 
 Use this template when a Paperclip-backed project wants PR/MR review to trigger structured multi-agent review instead of treating "PR opened" or "MR opened" as completion.
 
@@ -209,6 +209,8 @@ Do not try to build all of this at once. The phases below let adopters validate 
 ### Phase 2: Paperclip Plugin
 
 Build only after Phase 1 has produced a retrospective and the manual orchestration has been observed working end-to-end.
+
+Use `paperclip-git-provider-webhook-plugin-plan.md` for the implementation contract. The default model is: git-provider PR/MR webhook as the primary signal, scheduled reconciliation polling as a backup, and Paperclip heartbeat only as an agent execution primitive — not as the external-state detector.
 
 The plugin subscribes to Paperclip's in-process event bus (`server/src/services/plugin-event-bus.ts`):
 
