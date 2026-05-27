@@ -12,7 +12,8 @@ Start with `docs/agent-adoption-protocol.md`, then use the files here that match
 - `copilot-instructions.md` — GitHub Copilot instruction content.
 - `cursor-rules.md` — Cursor rules content.
 - `paperclip-project-instructions.md` — Paperclip board/project guidance.
-- `paperclip-mr-review-regimen.md` — experimental multi-agent PR/MR review regimen for Paperclip-backed projects.
+- `paperclip-mr-review-regimen.md` — experimental multi-agent PR/MR review regimen for Paperclip-backed projects (status: preview; see file header).
+- `paperclip-mr-review-adoption-recipe.md` — step-by-step recipe for a new project's first adoption of the regimen.
 - `paperclip-mr-review-matrix.md` — parent issue matrix for tracking required review lanes and decisions.
 - `paperclip-review-child-issue.md` — child issue template for a single review lane.
 - `paperclip-reviewer-output-contract.md` — required decision/evidence format for review-lane agents.

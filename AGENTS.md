@@ -29,4 +29,6 @@ When an AI assistant or coding agent works in this repo:
 10. Keep migration/cutover-specific guidance optional or advanced; do not make the starter kit feel like a production cutover framework.
 11. For UI workflows, require browser-visible evidence such as screenshots, traces, or exact manual QA steps.
 12. Make it clear that Paperclip or any other agent board only uses these templates if they are copied into an issue, linked in project docs, or referenced by project/agent instructions.
-13. When describing Hermes posting issues to Paperclip, say Hermes uses board-authorized authentication as the board user/operator.
+13. Maintain the turnkey adoption path: `docs/agent-adoption-protocol.md` is the agent-facing entrypoint for installing this framework into a target project without the human manually copying instructions.
+14. When adding adoption guidance, prefer concrete files, snippets, checklists, and receipt requirements over conceptual prose.
+15. When describing Hermes posting issues to Paperclip, say Hermes uses board-authorized authentication as the board user/operator.

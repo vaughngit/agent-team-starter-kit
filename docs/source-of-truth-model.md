@@ -30,6 +30,19 @@ A good agent issue should point to the right sources instead of copying everythi
 - Validation commands and evidence expectations
 - Human approval boundaries
 
+## What to install during project adoption
+
+When an agent adopts this starter kit into a project, it should add project-local guidance that names the actual files or systems for each layer:
+
+- Local agent instruction file: usually `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, or equivalent
+- Issue template or tracker guidance: where agent execution contracts are created
+- Completion-evidence template: where agents post receipts
+- Changelog or decision-log convention: `CHANGELOG.md`, `docs/decisions/`, `docs/change-management/`, or project-specific equivalent
+- Knowledge-base boundary: what belongs outside the repo, if the project uses an external knowledge base
+- Secret-manager boundary: pointer names only, never secret values
+
+Use `docs/agent-adoption-protocol.md` for the turnkey adoption flow.
+
 ## What not to put in an agent issue
 
 Avoid putting these into public or broadly visible issue text:

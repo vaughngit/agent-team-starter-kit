@@ -26,9 +26,12 @@ This starter kit gives you baseline templates for that loop.
 - `templates/ui-evidence-validation-template.md` — a stricter validation template for UI changes that need screenshots or browser automation.
 - `templates/completion-evidence-template.md` — a checklist for what an agent should return before work is considered reviewable.
 - `templates/changelog-entry-template.md` — a durable narrative layer for multi-issue initiatives and downstream activation decisions.
+- `templates/adoption/` — turnkey adoption snippets for project `AGENTS.md`, Claude, Copilot, Cursor, Paperclip, Linear, and adoption-checklist workflows.
 - `templates/advanced/context-equivalence-checklist.md` — an optional advanced checklist for migrations or workflow replacements where hidden context must be preserved.
 - `examples/example-agent-issue.md` — an example issue using fake/synthetic context.
 - `examples/example-changelog-entry.md` — an example changelog entry using fake/synthetic context.
+- `examples/example-adopted-project-instructions.md` — an example of project-local instructions after adoption.
+- `docs/agent-adoption-protocol.md` — agent-facing protocol for installing this framework into a target project without manual copy/paste.
 - `docs/agent-team-operating-model.md` — a lightweight operating model for human, supervisor, coding agent, reviewer, and repo roles.
 - `docs/source-of-truth-model.md` — guidance for telling agents which system owns intent, status, code, docs, secrets, and approval.
 - `docs/changelog-workflow.md` — guidance for when and how agent teams should update a changelog.
@@ -53,28 +56,30 @@ This is the main point: the template is not just a form. It is the shared contra
 
 Templates only help if something in your workflow explicitly points to them.
 
-The simplest pattern is to point your assistant or agent context at this repo and
-tell it to follow the examples and templates when creating agent work.
+There are two adoption paths:
 
-For example, add an instruction like this to your project `AGENTS.md`, team
-runbook, or agent operating notes:
+1. **Turnkey AI-agent adoption** — point an AI assistant or coding agent at this repo and the target project, then tell it to follow `docs/agent-adoption-protocol.md`.
+2. **Manual adoption** — copy the relevant templates or snippets into your project instructions, issue tracker, or runbook.
+
+The preferred path is turnkey adoption. The starter kit includes an agent-facing protocol and adoption snippets so the human does not have to manually translate the framework.
+
+Use a prompt like:
 
 ```text
-Follow the examples and templates in the agent-team starter kit:
-https://github.com/vaughngit/agent-team-starter-kit.
+Adopt the Agent Team Starter Kit into this project.
 
-Use them to turn rough human intent into structured agent issues with
-acceptance criteria, safety boundaries, validation gates, changelog
-expectations, and completion evidence.
-
-Require the agent to return receipts before the work is considered reviewable.
+Read https://github.com/vaughngit/agent-team-starter-kit and follow docs/agent-adoption-protocol.md.
+Inspect this target repo, then create or update the local agent instructions, issue-template guidance, validation gates, completion-evidence guidance, source-of-truth split, and changelog/docs impact rules.
+Return a patch or PR with changed files, validation performed, assumptions, and remaining human decisions.
 ```
+
+If you are adopting manually, start with `templates/adoption/AGENTS.md-snippet.md` and then add the tracker-specific or tool-specific files that match your project.
 
 ## Use with Paperclip or other agent systems
 
 These templates are intentionally tool-agnostic. They work best with systems that can track issues, agents, branches, comments, and review artifacts.
 
-Paperclip does not magically know about this repo just because it exists. The template has to be included in the issue body, linked in the project docs, or referenced in the project/agent instructions that Paperclip agents read.
+Paperclip, GitHub Issues, Linear, Jira, or any other tracker only benefit from this kit when the issue body, project docs, or local agent instructions point agents at the execution-contract pattern.
 
 A practical Paperclip flow:
 

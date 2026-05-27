@@ -38,9 +38,12 @@ Put the changelog requirement in three places:
 
 2. The agent/team operating docs
    - Tell supervisor and reviewer agents that the changelog is the durable narrative layer.
+   - During project adoption, name the actual project-local changelog or decision-log path.
 
 3. The issue handoff
    - Tell the implementation agent exactly which changelog entry to update or whether changelog is N/A.
+
+The turnkey adoption flow in `docs/agent-adoption-protocol.md` tells an adopting agent how to install these rules into a target project.
 
 ## Agent-team pattern
 

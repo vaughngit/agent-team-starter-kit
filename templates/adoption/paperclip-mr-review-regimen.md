@@ -1,10 +1,21 @@
 # Paperclip MR Review Regimen
 
-Status: experimental template
+> **Status: experimental — preview, not v1.**
+> This template is being piloted in a real Paperclip project. The pilot retrospective has not yet been written; the templates here may change after pilot completion. Treat this as a working draft to learn from, not a stable contract. When the pilot retrospective exists, this file should reference it as the canonical adoption example.
 
 Use this template when a Paperclip-backed project wants PR/MR review to trigger structured multi-agent review instead of treating "PR opened" or "MR opened" as completion.
 
 This is a coordination pattern. It does not replace project-specific delivery rules, human approval, CI, code review, or deployment checks.
+
+## When To Use This Pattern
+
+Use it when the cost of merging the wrong thing is high:
+- Production deployment on merge.
+- Real customer data, financial data, PII, or regulated workflows.
+- Multi-agent teams where individual reviewers can plausibly approve without verifying.
+- Anywhere `in_review` currently means "an MR exists" rather than "decisions have been made on real artifacts."
+
+Skip it when the change is trivial (typo, comment-only, vendored update with no behavior change) or when a single human reviewer is already faster and more reliable than orchestrating multiple agents.
 
 ## Core Rule
 
@@ -29,6 +40,7 @@ Opening a PR/MR starts review. It is not completion.
 7. **Reviewer budget is explicit.** Name expected lanes and iteration limits before starting.
 8. **Auto-merge stays off by default.** The regimen makes human approval easier; it does not silently merge production-impacting work.
 9. **Orchestrator independence.** The orchestrator must not be the implementation owner of the PR/MR under review. The implementation owner responds to findings; the orchestrator creates and routes review lanes and aggregates decisions.
+10. **Role definitions must be explicit, not inferable.** "The CTO orchestrates" is ambiguous when the CTO is also the implementation owner. Spell out who orchestrates each pilot, not just by title — by their relationship to the PR/MR under review. This rule exists because role-definition ambiguity survived multiple review passes in the original pilot and was only caught when a human questioned the assignment.
 
 ## Default Lanes
 
@@ -41,6 +53,31 @@ Opening a PR/MR starts review. It is not completion.
 
 Do not create all lanes by default. Create only the lanes required for the current PR/MR. Record waived lanes and reasons in the review matrix.
 
+## How This Maps Onto Paperclip
+
+The regimen uses Paperclip's existing primitives rather than inventing new ones. Adopters should understand this mapping before implementing.
+
+| Regimen concept | Paperclip primitive |
+|---|---|
+| Parent implementation issue | The existing Paperclip issue for the change. Moves to `in_review` once the PR/MR opens. |
+| Per-lane reviewer | A child Paperclip issue linked to the parent. Paperclip issue IDs are sequential numerics assigned at creation; record the real IDs in the parent matrix. Title format: `[Review][<parent-id>][<Lane>] <PR/MR title>`. |
+| "Who must decide on this lane now" | The child issue's `executionState.currentParticipant` (when an execution policy is attached) or the child issue's assignee (when no policy is in use). See "Known gotchas" below for the policy-null case. |
+| Lane decision | The child issue moves to `done` (approve), to `blocked` (cannot decide), or stays in `in_review` with a `request_changes` comment. |
+| Review matrix | A comment on the **parent** issue listing child IDs and current state. **This is text, not a structured object Paperclip enforces.** In Phase 1 the orchestrator updates it; in Phase 2 a plugin refreshes it from child issue states. |
+| Evidence | Comments on each child issue, plus links to artifacts stored outside the product repo. See "Evidence storage" below. |
+| Merge-readiness check | Phase 1: a human reads the parent matrix. Phase 2: a plugin computes readiness from child issue states and refuses to advance the parent until all required children are `done`. |
+
+## What Paperclip Does NOT Give You
+
+These are gaps adopters will hit if they assume Paperclip has them. Plan around them.
+
+- **No native PR/MR-opened webhook into Paperclip.** Phase 1: the implementation owner or orchestrator creates the child review issues manually when the PR/MR opens. Phase 2: build a Paperclip plugin that declares an inbound webhook for git-provider MR events.
+- **No physical merge block on the git provider.** Paperclip cannot prevent a merge on GitLab / GitHub / etc. It can only refuse to advance its own state. The actual safeguard against premature merge stays with the human merge step or with git-provider-side branch protection.
+- **No native "lane reset on push."** Phase 1: the implementation owner re-opens or re-flags affected child issues when pushing a fix. Phase 2: a plugin watches `issue.updated` plus PR/MR head-SHA changes and resets affected children.
+- **No outbound webhooks.** Paperclip's plugin system is in-process. Plugins are the integration path, not a separate webhook receiver.
+- **No native evidence storage.** Issue comments are durable; binary artifacts (screenshots, traces, recordings) live elsewhere and are linked from comments.
+- **`executionState` and `executionPolicy` may be `null` on issues that were never routed through a policy.** See "Known gotchas."
+
 ## Lifecycle
 
 ```text
@@ -48,12 +85,61 @@ implementation issue in_progress
 -> PR/MR opened
 -> parent issue in_review
 -> orchestrator creates child review issues in backlog
--> orchestrator activates lanes intentionally
--> reviewers post evidence-backed decisions
--> orchestrator updates review matrix
+-> orchestrator activates lanes intentionally (backlog -> todo, one at a time)
+-> reviewers post evidence-backed decisions on their child issues
+-> orchestrator updates the review matrix on the parent
 -> human receives approval packet
--> merge/deploy/acceptance only after approval
+-> merge/deploy/acceptance only after explicit human approval
 ```
+
+## Phased Rollout
+
+Do not try to build all of this at once. The phases below let adopters validate the pattern manually before paying the engineering cost of automation.
+
+### Phase 1: Manual, Single-PR/MR Pilot
+
+- Pick one PR/MR in your project that exercises multiple lanes (so the pilot tests the regimen, not just one lane).
+- The orchestrator manually creates child review issues per `paperclip-review-child-issue.md`.
+- Children start in `backlog`. The orchestrator promotes them to `todo` one at a time per the activation rule.
+- Reviewers post decision comments per `paperclip-reviewer-output-contract.md`.
+- The orchestrator maintains the review matrix on the parent per `paperclip-mr-review-matrix.md`.
+- The orchestrator walks one iteration round if findings warrant.
+- Append a retrospective to your project's adoption notes before generalizing.
+
+**Do not skip the pilot.** Project-specific gotchas (execution policy state, adapter capabilities, reviewer tool availability) will surface in the first pilot and may require template changes before broader rollout.
+
+### Phase 2: Paperclip Plugin
+
+Build only after Phase 1 has produced a retrospective and the manual orchestration has been observed working end-to-end.
+
+The plugin subscribes to Paperclip's in-process event bus (`server/src/services/plugin-event-bus.ts`):
+
+- Subscribes to `issue.updated` on parent issues. When a parent flips to `in_review` and has a linked PR/MR URL, the plugin classifies changed files, creates child review issues, and writes the review matrix comment.
+- Subscribes to `issue.updated` on child issues to recompute parent readiness and refresh the matrix as decisions land.
+- Declares an inbound webhook in the manifest for PR/MR events (see Phase 3).
+
+Effort estimate: comparable to any Paperclip plugin that uses the same SDK surface (`ctx.events.subscribe`, `ctx.api.issues.*`, manifest webhooks). If your project will also build other Paperclip plugins (e.g., a Linear bridge), ship one first to pay the SDK learning tax once.
+
+### Phase 3: Inbound Git-Provider Webhook
+
+This is the plugin's inbound webhook, not a separate receiver. Mount it at `/api/plugins/<your-plugin-id>/webhooks/<provider>` and expose it publicly via whatever tunnel/ingress your Paperclip instance uses for plugin webhooks.
+
+Security floor (non-negotiable for any plugin webhook exposed publicly):
+
+- **Fail-closed signature verification.** Prefer cryptographic HMAC if the git provider supports it. Otherwise, fail closed on the provider's plain shared-secret token. Verification error returns 401, never 200. No unsigned requests, no soft-fail-on-missing-secret paths.
+- **Path-only exposure.** The tunnel/ingress should expose only declared plugin webhook paths. The Paperclip UI, core REST API, board claim, and agent dispatch must not be reachable on the same public hostname; everything else returns 404 at the ingress.
+- **IP allowlist as defense in depth.** Where your ingress can restrict the webhook path to the git provider's published IP ranges, do so. Signature verification is the primary defense; IP allowlist is secondary.
+- **Audit log.** Every inbound webhook delivery (accepted or rejected) lands in Paperclip's `plugin_webhook_deliveries` table. Review for rejected deliveries spiking — that is the signal a secret leaked or rotated incorrectly.
+
+### Phase 4: Merge Readiness Gate
+
+The gate lives inside the Phase 2 plugin. It cannot block merge on the git provider — Paperclip has no merge-blocking hook into GitLab / GitHub / etc. But it can:
+
+- Refuse to flip the parent issue past `in_review` until all required child issues are `done` against the current head SHA.
+- Post a structured "not ready" comment listing missing lanes when something tries to advance the parent prematurely.
+- Surface readiness as a parent-issue field that the UI can render.
+
+The actual safeguard against premature production merge stays with the human merge step. The gate makes that step a one-line "approval packet" read, not a manual matrix audit.
 
 ## Orchestrator Role
 
@@ -61,8 +147,7 @@ The orchestrator:
 
 - Confirms the implementation artifact and reviewed SHA.
 - Chooses required lanes.
-- Creates child review issues.
-- Keeps inactive lanes in `backlog`.
+- Creates child review issues in `backlog`.
 - Moves one lane to `todo` only when ready to wake that reviewer.
 - Maintains the parent review matrix.
 - Aggregates reviewer decisions.
@@ -92,16 +177,51 @@ Recommended title format:
 [Review][<parent-issue-id>][<lane>] <PR/MR title>
 ```
 
-Create child issues in `backlog`. Move a child issue to `todo` only when the orchestrator intends to activate that reviewer.
+Create child issues in `backlog`. Move a child issue to `todo` only when the orchestrator intends to activate that reviewer. Do not bulk-activate child issues — activate one at a time so reviewer budget can be observed and adjusted.
 
 ## Iteration Rule
 
 When the implementation owner pushes a new commit:
 
-1. Compare the new head SHA to the last reviewed SHA.
-2. Reset affected lanes to pending or `todo`/`in_review` according to the project workflow.
-3. Require fresh evidence for affected lanes.
-4. Keep unaffected lane approvals only if their reviewed SHA and scope remain valid.
+1. Compare the new head SHA to the last reviewed SHA per lane (track this in the matrix).
+2. Reset affected lanes whose triggers overlap the new diff back to `in_review` or `todo`, depending on your project's status conventions.
+3. Require fresh evidence (new commands, new CI URL, new screenshot path) for affected lanes. They may not copy prior evidence forward.
+4. Keep unaffected-lane approvals only if their reviewed SHA and scope remain valid; cite the prior evidence in the matrix rather than re-running.
+
+Done criterion for the implementation owner: every required child issue is `done` against the current head SHA, or an unresolved finding has been surfaced to the human. After two review rounds with unresolved `request_changes`, stop and escalate rather than looping indefinitely.
+
+## Conflict Resolution
+
+When two child review issues return conflicting decisions on overlapping scope (e.g., Correctness approves auth changes while Operational flags them as deploy-risky), the orchestrator:
+
+1. **Does not aggregate or vote.** Conflicting reviewer outputs are not majority-decision material.
+2. **Quotes both decisions verbatim** in the parent issue's matrix comment under a `Conflicts:` section.
+3. **Surfaces the conflict to a human.** Routes via comment or approval request; if the project's execution policy exposes a safe mutation path, sets `currentParticipant` to the human reviewer. Otherwise, tags them.
+
+The human resolves, optionally by asking a third lane to weigh in.
+
+## Reviewer Budget
+
+Each PR/MR gets a default budget:
+
+- Up to 3 child review issues in the first pass.
+- Up to 2 additional iterations (re-reviews after pushed fixes).
+- Soft cap on tool calls per reviewer; reviewer notes when it bumps the cap in its decision comment.
+
+If a reviewer wants to exceed budget (expand scope, run more checks), it stops and posts a budget-extension request as a comment on its child issue. The orchestrator or human decides whether to extend.
+
+This is not about saving pennies. It is about preventing an agent loop from quietly burning an hour exploring tangents.
+
+## Evidence Storage
+
+Evidence linked from reviewer comments may include artifacts that contain sensitive data (PII, customer data, financial state, security tokens, internal URLs, screenshots of production UI). Default rule: **link, don't commit.**
+
+Recommended storage:
+- Artifacts live on your Paperclip host (or a project-controlled VM / object store) under a per-PR/MR/lane/SHA directory structure. Reviewer comments cite the path or URL.
+- CI job artifacts (the git provider's native artifact store) are also acceptable storage for evidence that was produced during CI.
+- Commit artifacts to the product repo **only** after explicit scrubbing and labeling as sanitized fixtures (e.g., under a `fixtures/` directory with redacted test data).
+
+When in doubt, link, don't commit. The product repo is not the right home for raw browser captures, transaction logs, or anything that includes production identifiers.
 
 ## Completion Rule
 
@@ -112,3 +232,20 @@ The parent issue is not ready for final human approval until:
 - the approval packet links to the reviewer decisions and evidence;
 - the human decision point is clear.
 
+## Known Gotchas
+
+Things adopters will likely hit. Surfaced from the initial pilot.
+
+- **`in_review` with `executionState: null` and `executionPolicy: null`.** A Paperclip issue can be `in_review` without ever having been routed through an execution policy. If the regimen assumes `currentParticipant` mutation works (as the routing primitive for child issues), this assumption will fail for issues that have no policy attached. Verify on the first child issue created: read the issue back after creation, inspect `executionState` and `executionPolicy`. If both are null, fall back to tagging the reviewer agent in a comment rather than mutating `currentParticipant`.
+- **Reviewer tool availability varies by adapter.** Browser-automation tools (Playwright, screen recording, etc.) may not be available in every Paperclip adapter's runtime. Confirm the UI reviewer has access to browser automation **before** activating its child issue, not during.
+- **Bulk activation burns budget.** If all child issues are moved to `todo` at once, every reviewer wakes simultaneously and the reviewer-budget cap is hit before findings can be observed. Always activate one lane at a time.
+- **Role definitions inferred from job titles fail.** "CTO orchestrates" doesn't survive contact with reality when CTO is also the implementation owner. Always state the orchestrator's relationship to the PR/MR under review, not just their title.
+- **A draft issue body in a separate tracking file is easier to iterate than the live Paperclip issue.** Author the issue body in a markdown file in your project's adoption notes; paste into Paperclip when ready. This avoids churning the live issue while wording is being refined.
+
+## See Also
+
+- `paperclip-mr-review-adoption-recipe.md` — step-by-step recipe for a new project's first adoption.
+- `paperclip-mr-review-matrix.md` — parent issue matrix template.
+- `paperclip-review-child-issue.md` — per-lane child issue template.
+- `paperclip-reviewer-output-contract.md` — required reviewer decision/evidence format.
+- `paperclip-project-instructions.md` — general Paperclip board/project guidance.
