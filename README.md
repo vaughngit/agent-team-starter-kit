@@ -27,6 +27,7 @@ This starter kit gives you baseline templates for that loop.
 - `templates/completion-evidence-template.md` — a checklist for what an agent should return before work is considered reviewable.
 - `templates/changelog-entry-template.md` — a durable narrative layer for multi-issue initiatives and downstream activation decisions.
 - `templates/adoption/` — turnkey adoption snippets for project `AGENTS.md`, Claude, Copilot, Cursor, Paperclip, Linear, and adoption-checklist workflows.
+  For Paperclip-backed PR/MR review, this includes the reviewer-agent setup, child issue, matrix, and output-contract templates needed to make lane decisions visible on the PR/MR.
 - `templates/advanced/context-equivalence-checklist.md` — an optional advanced checklist for migrations or workflow replacements where hidden context must be preserved.
 - `examples/example-agent-issue.md` — an example issue using fake/synthetic context.
 - `examples/example-changelog-entry.md` — an example changelog entry using fake/synthetic context.
@@ -92,6 +93,10 @@ A practical Paperclip flow:
 7. The human or reviewer checks the evidence against the issue contract before accepting the work.
 8. For dependent or multi-issue work, the changelog records what changed, what evidence was reviewed, and whether downstream work is ready to activate.
 9. A reviewer or human decides whether the receipts are good enough to accept the work.
+
+For structured multi-agent PR/MR review, use the Paperclip MR review regimen under `templates/adoption/`. The important rule from the pilot is that Paperclip-only review state is not enough: reviewer agents must include a PR/MR status mirror line, and the orchestrator or plugin must keep the git-provider PR/MR updated because that is where the human merge decision happens.
+
+Reviewer agents also need runtime-visible context. If the project uses a private wiki, second brain, or planning notebook, copy the durable review context into the repo, PR/MR, parent issue, or child review issue before activation. Do not require Paperclip reviewer agents to mount external personal notes to make a lane decision.
 
 If you are using GitHub Issues, Linear, Jira, or another tracker, use the same sections there and link the resulting branch or pull request.
 

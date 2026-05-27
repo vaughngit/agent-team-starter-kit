@@ -9,9 +9,9 @@ Use this model to tell agents where to look and what to trust.
 | Layer | What it is authoritative for | What it is not for |
 |---|---|---|
 | Human owner | Intent, risk tolerance, final acceptance, approval for sensitive actions | Storing every implementation detail |
-| Issue tracker / agent board | Live task state, assignments, comments, blockers, completion evidence | Long-term architecture rationale by itself |
-| Repo / code review surface | Code, diffs, commits, tests, CI, PR/MR review artifacts | Product intent unless linked from docs/issues |
-| Project docs / knowledge base | Requirements, architecture, operating rules, decisions, read order | Secret values or live issue status |
+| Issue tracker / agent board | Live task state, assignments, comments, blockers, completion evidence, detailed review-lane state | Long-term architecture rationale by itself |
+| Repo / code review surface | Code, diffs, commits, tests, CI, PR/MR review artifacts, human merge-decision surface | Product intent unless linked from docs/issues |
+| Project docs / knowledge base | Requirements, architecture, operating rules, decisions, read order | Secret values, live issue status, or runtime-only reviewer context that has not been copied into the repo/issue/PR |
 | Changelog / decision log | What changed, why it matters, evidence reviewed, downstream activation decisions | Full raw logs or every agent thought |
 | Secret manager | Secret values and credential metadata | Public instructions, issue text, or logs |
 | Local assistant / supervisor | Turning human intent into structured issues and checking references | Quietly approving production-risk actions |
@@ -26,6 +26,7 @@ A good agent issue should point to the right sources instead of copying everythi
 - Project README / `AGENTS.md` / team runbook
 - Relevant product/design notes
 - Relevant changelog or decision-log entry
+- Relevant external-knowledge-base excerpts that are required for execution or review
 - Credential pointer names, without secret values
 - Validation commands and evidence expectations
 - Human approval boundaries
@@ -39,6 +40,7 @@ When an agent adopts this starter kit into a project, it should add project-loca
 - Completion-evidence template: where agents post receipts
 - Changelog or decision-log convention: `CHANGELOG.md`, `docs/decisions/`, `docs/change-management/`, or project-specific equivalent
 - Knowledge-base boundary: what belongs outside the repo, if the project uses an external knowledge base
+- Runtime context boundary: what must be copied into the repo, issue, or PR/MR before implementation or review agents are activated
 - Secret-manager boundary: pointer names only, never secret values
 
 Use `docs/agent-adoption-protocol.md` for the turnkey adoption flow.
@@ -52,6 +54,7 @@ Avoid putting these into public or broadly visible issue text:
 - Private repository links in public examples
 - Large raw logs when a summary and artifact link would do
 - Ambiguous statements such as "use the usual process" without a link
+- Required reviewer context that exists only in private chat, personal notes, or an unmounted knowledge base
 
 ## Read-order pattern
 
@@ -75,6 +78,7 @@ Before acting, an agent should be able to answer:
 - What evidence must I produce?
 - What data or actions are out of bounds?
 - Who accepts the result?
+- If I am reviewing a PR/MR, where will my decision be visible to the human who can merge?
 
 If any answer is missing, the agent should ask for clarification or create a blocker instead of guessing.
 
@@ -85,4 +89,6 @@ If any answer is missing, the agent should ask for clarification or create a blo
 - Posting secret values into issue comments.
 - Expanding scope because the agent found a related problem.
 - Marking work done without reviewable evidence.
+- Completing review lanes only in the agent board while the PR/MR still looks unreviewed.
+- Asking reviewer agents to mount or scrape a private knowledge base instead of putting required context in the repo, issue, or PR/MR.
 - Losing the rationale for multi-issue work because it only lives in chat or agent logs.

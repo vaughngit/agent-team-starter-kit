@@ -18,6 +18,7 @@ Use this template to create a child Paperclip issue for one review lane.
 - Orchestrator (must be different from implementation owner):
 - Implementation owner:
 - Reviewer independence confirmed: yes/no
+- PR/MR status mirror target: <comment URL or "orchestrator posts">
 
 ## Activation Rule
 
@@ -84,6 +85,7 @@ The reviewer must produce **fresh** evidence for the new SHA. Copying prior evid
 5. If your runtime is missing a tool the lane requires (e.g., browser automation for UI lane), do **not** improvise. Mark the decision `blocked` with the missing capability cited; the orchestrator routes the lane to a different reviewer.
 6. If you are the implementation owner of the PR/MR, stop and return `blocked`; the orchestrator must route this lane to an independent reviewer.
 7. Post a final decision comment using `paperclip-reviewer-output-contract.md`.
+8. Include the `PR/MR Status Mirror` section. If you cannot update the PR/MR directly, tag the orchestrator and provide the exact status line to mirror.
 
 ## Completion
 
@@ -94,4 +96,6 @@ Decision must be one of:
 - blocked.
 
 If the decision is `request_changes` or `blocked`, cite the exact evidence and recommended next action so the implementation owner or orchestrator knows what to do.
+
+The lane is not fully handed off until the decision is visible in both Paperclip and the PR/MR status mirror.
 ```

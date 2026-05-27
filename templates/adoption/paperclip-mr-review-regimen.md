@@ -156,8 +156,10 @@ The regimen uses Paperclip's existing primitives rather than inventing new ones.
 | "Who must decide on this lane now" | The child issue's `executionState.currentParticipant` (when an execution policy is attached) or the child issue's assignee (when no policy is in use). See "Known gotchas" below for the policy-null case. |
 | Lane decision | The child issue moves to `done` (approve), to `blocked` (cannot decide), or stays in `in_review` with a `request_changes` comment. |
 | Review matrix | A comment on the **parent** issue listing child IDs and current state. **This is text, not a structured object Paperclip enforces.** In Phase 1 the orchestrator updates it; in Phase 2 a plugin refreshes it from child issue states. |
+| Git-provider review visibility | A required PR/MR status mirror comment. It is derived from Paperclip state, but it must be visible on the PR/MR because that is where the human merge decision happens. |
 | Evidence | Comments on each child issue, plus links to artifacts stored outside the product repo. See "Evidence storage" below. |
 | Merge-readiness check | Phase 1: a human reads the parent matrix. Phase 2: a plugin computes readiness from child issue states and refuses to advance the parent until all required children are `done`. |
+| Reviewer-agent behavior | Live Paperclip agent configuration or capability text. Use `paperclip-review-agent-setup.md`; repo template changes alone do not update live agents. |
 
 ## What Paperclip Does NOT Give You
 
@@ -165,6 +167,8 @@ These are gaps adopters will hit if they assume Paperclip has them. Plan around 
 
 - **No native PR/MR-opened webhook into Paperclip.** Phase 1: the implementation owner or orchestrator creates the child review issues manually when the PR/MR opens. Phase 2: build a Paperclip plugin that declares an inbound webhook for git-provider MR events.
 - **No physical merge block on the git provider.** Paperclip cannot prevent a merge on GitLab / GitHub / etc. It can only refuse to advance its own state. The actual safeguard against premature merge stays with the human merge step or with git-provider-side branch protection.
+- **No automatic PR/MR status mirror unless you build it.** Paperclip comments and child issue state are not automatically visible on GitHub/GitLab. Phase 1: the orchestrator posts and maintains a PR/MR status mirror manually. Phase 2: the plugin updates it idempotently when child issue state changes.
+- **No automatic live-agent update from repo templates.** Editing this regimen does not change the agents Paperclip will wake. Update reviewer-agent capability/instruction text separately and verify it in Paperclip.
 - **No native "lane reset on push."** Phase 1: the implementation owner re-opens or re-flags affected child issues when pushing a fix. Phase 2: a plugin watches `issue.updated` plus PR/MR head-SHA changes and resets affected children.
 - **No outbound webhooks.** Paperclip's plugin system is in-process. Plugins are the integration path, not a separate webhook receiver.
 - **No native evidence storage.** Issue comments are durable; binary artifacts (screenshots, traces, recordings) live elsewhere and are linked from comments.
@@ -244,6 +248,7 @@ The orchestrator:
 - Creates child review issues in `backlog`.
 - Moves one lane to `todo` only when ready to wake that reviewer.
 - Maintains the parent review matrix.
+- Maintains the PR/MR status mirror so the git-provider review surface shows current lane state.
 - Aggregates reviewer decisions.
 - Escalates conflicts and blockers.
 - Records waivers and reasons.
@@ -358,6 +363,7 @@ The parent issue is not ready for final human approval until:
 - required lanes are `done` against the current reviewed SHA, or explicitly waived with a reason;
 - blockers and conflicts are resolved or escalated;
 - the approval packet links to the reviewer decisions and evidence;
+- the PR/MR status mirror is current and says decision-ready;
 - the human decision point is clear.
 
 ## Known Gotchas
@@ -369,6 +375,9 @@ Things adopters will likely hit. Surfaced from the initial pilot.
 - **Bulk activation burns budget.** If all child issues are moved to `todo` at once, every reviewer wakes simultaneously and the reviewer-budget cap is hit before findings can be observed. Always activate one lane at a time.
 - **Role definitions inferred from job titles fail.** "CTO orchestrates" doesn't survive contact with reality when CTO is also the implementation owner. Always state the orchestrator's relationship to the PR/MR under review, not just their title.
 - **A draft issue body in a separate tracking file is easier to iterate than the live Paperclip issue.** Author the issue body in a markdown file in your project's adoption notes; paste into Paperclip when ready. This avoids churning the live issue while wording is being refined.
+- **Paperclip-only review state is invisible at merge time.** If completed lanes are only visible in Paperclip, the human reviewer has to leave the PR/MR to infer merge readiness. Require the orchestrator or plugin to mirror lane state onto the git-provider PR/MR after lane enumeration and after every lane state change.
+- **Hidden external context breaks reviewer lanes.** If a reviewer needs information from a private knowledge base, wiki, or second brain, copy the durable relevant content into the repo, PR/MR, parent issue, or child issue before activation. Do not require reviewers to mount external notes at runtime.
+- **Template updates are not agent updates.** A repo diff can describe the new output contract while live reviewer agents keep following their old behavior. Treat live-agent verification as part of adoption.
 
 ## Promotion To v1
 
@@ -387,6 +396,7 @@ When promoted, replace the preview warning with a stable-version note and link t
 
 - `paperclip-mr-review-adoption-recipe.md` — step-by-step recipe for a new project's first adoption.
 - `paperclip-mr-review-matrix.md` — parent issue matrix template.
+- `paperclip-review-agent-setup.md` — live reviewer-agent capability and setup guidance.
 - `paperclip-review-child-issue.md` — per-lane child issue template.
 - `paperclip-reviewer-output-contract.md` — required reviewer decision/evidence format.
 - `paperclip-project-instructions.md` — general Paperclip board/project guidance.

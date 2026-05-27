@@ -15,6 +15,7 @@ Start with `docs/agent-adoption-protocol.md`, then use the files here that match
 - `paperclip-mr-review-regimen.md` — experimental multi-agent PR/MR review regimen for Paperclip-backed projects (status: preview; see file header).
 - `paperclip-mr-review-adoption-recipe.md` — step-by-step recipe for a new project's first adoption of the regimen.
 - `paperclip-mr-review-matrix.md` — parent issue matrix for tracking required review lanes and decisions.
+- `paperclip-review-agent-setup.md` — live reviewer-agent capability and setup guidance.
 - `paperclip-review-child-issue.md` — child issue template for a single review lane.
 - `paperclip-reviewer-output-contract.md` — required decision/evidence format for review-lane agents.
 - `linear-issue-guidance.md` — Linear issue guidance.
@@ -22,3 +23,13 @@ Start with `docs/agent-adoption-protocol.md`, then use the files here that match
 ## Agent rule
 
 Do not install every tool-specific file by default. Inspect the target project, preserve existing conventions, and add only the instructions that future agents in that project are likely to read.
+
+For Paperclip PR/MR review, install the regimen as a set:
+
+- project or board instructions that point to the regimen;
+- live reviewer-agent capability updates from `paperclip-review-agent-setup.md`;
+- parent matrix and child-issue templates;
+- reviewer output contract;
+- a PR/MR status mirror convention on the git provider.
+
+Do not stop after updating the process docs. If the live reviewer agents do not know the output contract and PR/MR mirror rule, the next review will drift back into Paperclip-only state.

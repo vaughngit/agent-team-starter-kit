@@ -27,6 +27,14 @@ This is a lightweight operating model for reviewable autonomous agent work.
 - Keeps lifecycle state coherent: backlog, todo, in_progress, in_review, done, blocked.
 - Maintains the changelog or decision log when work spans multiple issues, review steps, or downstream activation decisions.
 
+### Review orchestrator
+
+- Routes review lanes without serving as the implementation owner for the PR/MR under review.
+- Creates or verifies child review issues, reviewer assignments, reviewed SHA, and evidence requirements.
+- Maintains the parent review matrix or equivalent tracker summary.
+- Maintains the PR/MR status mirror so the code-review surface shows current lane state.
+- Aggregates reviewer decisions into a human decision packet without voting away blocking findings.
+
 ### Coding agent
 
 - Implements one focused issue.
@@ -40,11 +48,15 @@ This is a lightweight operating model for reviewable autonomous agent work.
 - Checks spec compliance and evidence quality.
 - Verifies screenshots, traces, logs, tests, and review notes.
 - Flags gaps instead of accepting vague claims.
+- Reviews only its assigned lane and returns `approve`, `request_changes`, or `blocked`.
+- Includes a PR/MR status mirror line when the project uses structured review lanes.
+- Blocks when required review context is missing from the repo, issue, or PR/MR instead of relying on hidden notes.
 
 ### Git provider / code review surface
 
 - Stores branch, diff, review comments, CI output, and evidence attachments.
 - Acts as the durable handoff unit for code work.
+- Shows current review-lane state when Paperclip or another agent board owns detailed review issues.
 
 ## Lifecycle
 

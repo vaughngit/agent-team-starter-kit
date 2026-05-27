@@ -13,6 +13,7 @@ Reviewed SHA: <sha>
 Implementation owner: <agent/user>
 Orchestrator: <agent/user, must be different from implementation owner>
 Budget: <N reviewers, up to M iterations>
+PR/MR status mirror: <comment URL or "not posted yet">
 
 Orchestrator independence:
 - [ ] Orchestrator is not the implementation owner of this PR/MR.
@@ -40,6 +41,12 @@ Reviewer decisions (against reviewed SHA above):
 - Operational Risk: <pending|approve|request_changes|blocked> — <link to comment/evidence>
 - UI Behavior: <pending|approve|request_changes|blocked|waived> — <link or reason>
 - Docs / Operator Context: <pending|approve|request_changes|blocked|waived> — <link or reason>
+
+PR/MR mirror state:
+- Correctness: <not mirrored|mirrored at URL|N/A>
+- Operational Risk: <not mirrored|mirrored at URL|N/A>
+- UI Behavior: <not mirrored|mirrored at URL|N/A>
+- Docs / Operator Context: <not mirrored|mirrored at URL|N/A>
 
 Current blocker:
 - <none, or issue/comment/link>
@@ -76,8 +83,10 @@ Final approval packet:
 ## Notes
 
 - Update the matrix after each lane decision.
+- Update the PR/MR status mirror after each lane decision, block, waiver, reset, or final approval packet.
 - Update the matrix after each new commit to the PR/MR branch — record new head SHA, list lanes reset, and bump iteration round.
 - Do not mark the parent issue done based only on the existence of a PR/MR or on the matrix saying "ready" — that is the human's call.
+- Do not treat a lane as fully handed off until both the parent matrix and PR/MR status mirror show the current lane state.
 - Keep evidence links re-openable by the human reviewer. Links to artifacts on a project VM or CI artifact store are fine; raw artifacts committed to the product repo are usually wrong (see "Evidence Storage" in the regimen doc).
 - When a lane is `waived`, the waiver text must include the reason. "Not applicable" alone is not sufficient.
 - When an emergency bypass is approved, keep the matrix `blocked` or `not ready` until the bypass record includes approver, risk owner, rollback/mitigation plan, and follow-up issues.

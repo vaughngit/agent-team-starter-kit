@@ -15,6 +15,12 @@ Reviewed SHA: <sha>
 Decision: approve | request_changes | blocked
 Confidence: low | medium | high
 
+## PR/MR Status Mirror
+
+- Status line for PR/MR: <lane> <child issue>: <approve|request_changes|blocked> against <sha>; evidence: <link/comment/artifact>; next: <one-line next action>
+- If this reviewer can update the PR/MR directly, post or update the PR/MR mirror and link it here.
+- If this reviewer cannot update the PR/MR directly, tag the orchestrator to mirror this status before the lane is treated as fully handed off.
+
 ## Scope Inspected
 
 - <files, endpoints, flows, configs, docs, CI jobs, or UI states inspected>
@@ -83,3 +89,4 @@ Paperclip/tool traces:
 - The reviewer does not aggregate cross-lane signals. "Correctness approved already, so I'll approve UI" is not allowed. Each lane decides on its own evidence.
 - The implementation owner must not approve their own PR/MR in any lane. If assigned, return `blocked` and cite the reviewer-independence rule.
 - Evidence containing sensitive data must identify access and retention expectations. Do not paste raw sensitive evidence into the comment.
+- The lane is not fully handed off until its decision is visible in Paperclip and in the git-provider PR/MR status mirror.

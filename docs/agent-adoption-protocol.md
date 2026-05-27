@@ -86,6 +86,8 @@ At minimum, define:
 - Secret manager: secret values and credential metadata only
 - PR/MR/code-review surface: diffs, review discussion, CI, review artifacts
 
+If the target project uses a private knowledge base, wiki, or second brain, define the runtime boundary explicitly: planning context may live there, but context required by implementation or review agents must be copied or summarized into the repo, issue, or PR/MR before activation.
+
 If the target project already has a source-of-truth model, preserve it and add missing starter-kit requirements.
 
 ### 3. Add issue or tracker guidance
@@ -161,6 +163,19 @@ Use the adoption templates that match the target project:
 
 Do not add every tool-specific file by default. Prefer the project’s existing tool surface.
 
+For Paperclip-backed PR/MR review, adoption is incomplete unless the agent also installs or references:
+
+- `templates/adoption/paperclip-mr-review-regimen.md`
+- `templates/adoption/paperclip-mr-review-adoption-recipe.md`
+- `templates/adoption/paperclip-mr-review-matrix.md`
+- `templates/adoption/paperclip-review-agent-setup.md`
+- `templates/adoption/paperclip-review-child-issue.md`
+- `templates/adoption/paperclip-reviewer-output-contract.md`
+
+The adopting agent must verify that live reviewer agents know the reviewer output contract and the PR/MR status mirror rule. A template change alone does not update the agents that Paperclip will wake.
+
+If the target project has a git-provider PR/MR surface, document where lane state is mirrored there. Paperclip issue state is the detailed system of record, but the PR/MR must show current review readiness because the human merge decision happens there.
+
 ### 8. Return receipts
 
 At the end, report:
@@ -171,6 +186,8 @@ At the end, report:
 - Assumptions made
 - Any remaining human decisions
 - Suggested first agent issue, if appropriate
+
+For Paperclip PR/MR review adoptions, also report whether live reviewer agents were updated or only a patch plan was produced. Do not imply live-agent behavior changed when only repo files changed.
 
 ## Adoption checklist
 
@@ -186,3 +203,4 @@ Adoption is successful when a future agent can start in the target project, read
 - when to update docs/changelogs
 - what not to change without approval
 - what human decision is required before done, merge, deploy, or activation
+- if using Paperclip review lanes, how reviewer decisions become visible on the PR/MR and where reviewer agents get their runtime context

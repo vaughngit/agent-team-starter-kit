@@ -14,9 +14,10 @@ In order:
 
 1. `paperclip-mr-review-regimen.md` — concepts, principles, phased rollout, mapping to Paperclip primitives.
 2. `paperclip-mr-review-matrix.md` — what the parent-issue review matrix looks like.
-3. `paperclip-review-child-issue.md` — what each per-lane child issue looks like.
-4. `paperclip-reviewer-output-contract.md` — what reviewer agents must produce.
-5. `paperclip-project-instructions.md` — general Paperclip conventions you should already be following.
+3. `paperclip-review-agent-setup.md` — what live reviewer agents must know before they are activated.
+4. `paperclip-review-child-issue.md` — what each per-lane child issue looks like.
+5. `paperclip-reviewer-output-contract.md` — what reviewer agents must produce.
+6. `paperclip-project-instructions.md` — general Paperclip conventions you should already be following.
 
 Then read the "How This Maps Onto Paperclip" and "What Paperclip Does NOT Give You" sections of the regimen doc again. If those gaps are deal-breakers for your project, stop and plan around them before continuing.
 
@@ -48,6 +49,8 @@ Status: <one-line current state>
 ```
 
 **Why outside Paperclip:** the pilot will produce findings you want to iterate on without churning a live Paperclip issue. The tracking file is durable; the Paperclip issue is execution state.
+
+Do not confuse the tracking artifact with runtime reviewer context. If a reviewer needs a fact from this tracking file or an external knowledge base, copy the relevant durable fact into the repo, PR/MR, parent issue, or child issue before activating that reviewer.
 
 ## Step 3: Pick the pilot PR/MR
 
@@ -90,7 +93,21 @@ In the tracking file, write:
 
 If your project's persona setup means the obvious orchestrator candidate is also the implementation owner, pick a different orchestrator (a peer agent, a supervisor agent, or a human). Do not proceed with the assignment if independence cannot be honored.
 
-## Step 6: Draft the pilot Paperclip issue body in a file
+## Step 6: Update live reviewer agents
+
+Before creating child issues, update the live Paperclip reviewer agents using `paperclip-review-agent-setup.md`.
+
+Minimum install:
+
+- each lane reviewer knows its lane scope;
+- each lane reviewer knows the reviewer output contract;
+- each lane reviewer knows it must include a PR/MR status mirror line;
+- each lane reviewer knows to block when required context is missing from the repo, PR/MR, parent issue, or child issue;
+- each lane reviewer knows not to approve its own implementation work.
+
+Read the agents back from Paperclip and record verification in the tracking file. Do not assume updating these template files changed the agents that Paperclip will wake.
+
+## Step 7: Draft the pilot Paperclip issue body in a file
 
 Author the pilot issue body in a markdown file alongside the tracking file. Do **not** type it directly into the Paperclip UI.
 
@@ -106,23 +123,26 @@ Acceptance criteria the issue body must include:
 - Reviewer personas are independent from the implementation owner, or the affected lanes will be routed to a human/blocked.
 - Child review issues will be created in `backlog`, activated one at a time.
 - Review matrix posted on the parent.
+- PR/MR status mirror posted on the git-provider PR/MR and updated after every lane state change.
 - Each reviewer posts a decision comment meeting the Reviewer Output Contract with at least one re-openable evidence artifact.
 - One iteration round walked if findings warrant; record _why_ if no findings warrant it (it is a meaningful signal either way).
 - Retrospective appended to the tracking file.
 
-## Step 7: Create the pilot issue in `backlog`
+## Step 8: Create the pilot issue in `backlog`
 
 Create the Paperclip issue **in `backlog` first.** Do not move to `todo` immediately. `backlog` shapes the issue without waking any agent; `todo` is the activation handoff.
 
 Record the assigned numeric ID in the tracking file. The ID will not match anything you predicted — Paperclip assigns it.
 
-## Step 8: Activate the pilot
+## Step 9: Activate the pilot
 
 Once the orchestrator is ready to start (not before), move the pilot issue from `backlog` to `todo`. Paperclip may advance it to `in_progress` based on execution policy; that is expected.
 
 The orchestrator's first job is to create the child review issues, **also in `backlog`**.
 
-## Step 9: Activate child issues one at a time
+The orchestrator should also post the initial PR/MR status mirror on the git-provider PR/MR. The mirror can be a single rolling comment or whatever convention the project chooses, but it must be visible where the human merge decision happens.
+
+## Step 10: Activate child issues one at a time
 
 For each required lane:
 
@@ -131,12 +151,14 @@ For each required lane:
 3. Before moving it to `todo`, verify the reviewer persona has the tooling it needs (browser automation for UI, git/CI access for Operational, etc.).
 4. Move to `todo`. The reviewer wakes.
 5. Wait for the decision comment per the Reviewer Output Contract.
-6. The orchestrator updates the parent matrix.
-7. Repeat for the next lane.
+6. Confirm the decision includes a PR/MR status mirror line.
+7. The orchestrator updates the parent matrix.
+8. The orchestrator updates the PR/MR status mirror before treating the lane as handed off.
+9. Repeat for the next lane.
 
 **Do not bulk-activate.** All reviewers waking at once is how budget gets burned before findings can be observed.
 
-## Step 10: Walk one iteration round if findings warrant
+## Step 11: Walk one iteration round if findings warrant
 
 If any reviewer returns `request_changes`:
 
@@ -147,7 +169,7 @@ If any reviewer returns `request_changes`:
 
 If no findings warrant `request_changes` (every lane approves on first pass), record **why** in the tracking file. Either the regimen is producing trustworthy approvals, or reviewers are rubber-stamping. Both are real signals; both matter for the retrospective.
 
-## Step 11: Handle emergency bypass if needed
+## Step 12: Handle emergency bypass if needed
 
 Emergency bypass is allowed only by explicit human decision. Use it when waiting for all lanes would be riskier than proceeding, not when the regimen is merely inconvenient.
 
@@ -161,7 +183,7 @@ Record on the parent issue:
 
 Count the bypass in the retrospective.
 
-## Step 12: Hand off the approval packet to the human
+## Step 13: Hand off the approval packet to the human
 
 Aggregate the lane decisions into a single short summary:
 
@@ -182,7 +204,9 @@ Human decision requested: accept / request-changes / block.
 
 The human reads this, opens whichever child issues they want to spot-check, and decides.
 
-## Step 13: Write the retrospective
+Post or update this approval packet on the PR/MR as well. The parent Paperclip issue can own the detailed record, but the PR/MR must show the current decision-ready state.
+
+## Step 14: Write the retrospective
 
 Append to the tracking file (and, if you maintain a project-level copy of the regimen spec, to that doc as well):
 
@@ -192,9 +216,11 @@ Append to the tracking file (and, if you maintain a project-level copy of the re
 - Surprising Paperclip interactions (especially around `currentParticipant`, execution policies, child issue routing).
 - Observed token/time cost per PR/MR.
 - Pre-conditions a Phase 2 plugin would need to assume.
+- Whether reviewer-agent capability text was sufficient or agents still missed the PR/MR mirror/context-boundary rule.
+- Whether required review context was available in the repo/PR/MR/issues or had to be copied out of an external knowledge base.
 - Whether the pattern should be expanded to more PR/MRs as-is, expanded with changes, or abandoned.
 
-## Step 14: Decide on broader adoption
+## Step 15: Decide on broader adoption
 
 Only after the retrospective is written:
 
@@ -204,7 +230,7 @@ Only after the retrospective is written:
 
 Do not consider extracting any project-specific changes back into shared starter-kit templates until the pilot has clearly succeeded.
 
-## Step 15: Promote the local copy to v1, or keep it preview
+## Step 16: Promote the local copy to v1, or keep it preview
 
 Do not remove preview language until the regimen doc's "Promotion To v1" criteria are met. If the pilot was inconclusive, keep the template marked preview and write down what evidence is still missing.
 
@@ -216,6 +242,9 @@ Things to **not** do during the pilot:
 - Do **not** assign the orchestrator role to the implementation owner. Even temporarily. Even "just to see what happens." This is the easiest failure mode to repeat.
 - Do **not** assign the implementation owner as a review-lane reviewer for their own PR/MR.
 - Do **not** commit raw browser captures, traces, or logs containing production data to the product repo. Link, don't commit.
+- Do **not** require reviewer agents to mount a private knowledge base or second brain. Put required runtime context in the repo, PR/MR, parent issue, or child issue.
+- Do **not** leave completed review lanes visible only in Paperclip. The PR/MR must show current lane state.
+- Do **not** update only the templates and assume live Paperclip agents changed. Verify live agent configuration.
 - Do **not** skip the retrospective. The retrospective is what makes the pilot worth running.
 - Do **not** build a plugin before manual orchestration has been observed working end-to-end.
 - Do **not** treat the templates as immutable. They are experimental. If your pilot surfaces a real flaw, fix the templates.

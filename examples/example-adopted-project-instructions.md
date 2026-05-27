@@ -11,9 +11,11 @@ This project uses agent issues as execution contracts. Agents should not start f
 - Human owner: intent, acceptance, and sensitive approvals
 - Issue tracker: live work state, assignment, blockers, comments, completion evidence
 - Repo: code, tests, `CHANGELOG.md`, `docs/decisions/`, implementation docs
-- Knowledge base: broader planning and long-form rationale
+- Knowledge base: broader planning and long-form rationale, not required runtime context unless copied into the repo/issue/PR
 - Secret manager: secrets and credential metadata
 - PR/MR: diff, CI, review comments, and merge decision
+
+If this project uses Paperclip review lanes, reviewer decisions must also be mirrored on the PR/MR so the merge surface shows current review state.
 
 ## Required issue sections
 

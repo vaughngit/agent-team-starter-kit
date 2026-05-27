@@ -15,6 +15,8 @@ Paperclip is the live agent board and execution tracker. It owns:
 
 Paperclip does not replace the repo, project docs, secret manager, or human approval. Agents should link to those sources instead of copying everything into the issue.
 
+If the project uses a private knowledge base, wiki, or second brain, Paperclip may link to it as planning context, but reviewer agents must not require it at runtime. Anything required for implementation or review belongs in the product repo, PR/MR, parent Paperclip issue, or child review issue before activation.
+
 ## Issue creation
 
 When a local assistant or supervisor creates a Paperclip issue, shape it as an execution contract using `templates/agent-issue-template.md`.
@@ -60,12 +62,17 @@ For projects that need structured multi-agent PR/MR review, use the experimental
 - `templates/adoption/paperclip-mr-review-regimen.md` — concepts, principles, mapping to Paperclip primitives, phased rollout, known gotchas.
 - `templates/adoption/paperclip-mr-review-adoption-recipe.md` — step-by-step recipe for your first adoption. **Start here if you are actually planning to implement.**
 - `templates/adoption/paperclip-mr-review-matrix.md` — parent issue matrix template.
+- `templates/adoption/paperclip-review-agent-setup.md` — live reviewer-agent capability and setup guidance.
 - `templates/adoption/paperclip-review-child-issue.md` — per-lane child issue template.
 - `templates/adoption/paperclip-reviewer-output-contract.md` — required reviewer decision/evidence format.
 
 Do not treat PR/MR creation as completion. PR/MR creation starts the review regimen.
 
 Important coordination rule: the review orchestrator must not be the implementation owner of the PR/MR under review. The implementation owner responds to review findings; the orchestrator creates and routes review lanes, tracks evidence, and aggregates the approval packet. State role assignments explicitly by relationship to the PR/MR, not by job title — title-based inference is the easiest failure mode to repeat.
+
+Important visibility rule: Paperclip issue state is not enough. The orchestrator, reviewer, or plugin must maintain a PR/MR status mirror on the git-provider review surface. Each reviewer decision must include a mirror-ready status line, and a lane is not fully handed off until both Paperclip and the PR/MR reflect the lane state.
+
+Important agent-setup rule: changing these repo templates does not automatically update live Paperclip agents. When adopting the regimen, update the reviewer agents' live capability/instruction text using `paperclip-review-agent-setup.md`, then read the agents back from Paperclip to verify the rule is present.
 
 ## Safety
 
