@@ -224,7 +224,23 @@ Effort estimate: comparable to any Paperclip plugin that uses the same SDK surfa
 
 ### Phase 3: Inbound Git-Provider Webhook
 
-This is the plugin's inbound webhook, not a separate receiver. Mount it at `/api/plugins/<your-plugin-id>/webhooks/<provider>` and expose it publicly via whatever tunnel/ingress your Paperclip instance uses for plugin webhooks.
+> **Prerequisite — automatic close-out requires public ingress AND a registered webhook.** Automatic merge close-out does not work until BOTH of these are live:
+> 1. **A public ingress endpoint for your Paperclip instance.** The plugin's inbound webhook must be reachable from your git provider. This is infrastructure you provision (a tunnel, reverse proxy, or ingress with a public hostname) — the plugin does not establish it. **Installing the plugin is necessary but NOT sufficient; installed does not mean reachable.**
+> 2. **A registered git-provider webhook** pointed at the plugin's webhook path with a shared secret (see "Registering the Git-Provider Webhook" below).
+>
+> Until both are live, close-out is **manual** — the orchestrator closes the parent issue after merge, exactly as in Phase 1. Treat the manual path as the supported fallback, not a failure state. Do not assume a merge auto-closes the Paperclip parent until you have tested the full delivery chain end to end with a real merge.
+
+This is the plugin's inbound webhook, not a separate receiver. Mount it at `/api/plugins/<your-plugin-id>/webhooks/<provider>` and expose it publicly via whatever tunnel/ingress your Paperclip instance uses for plugin webhooks. The full delivery chain that has to be live is:
+
+```text
+git-provider MR/PR merge event
+  -> your public ingress hostname
+  -> tunnel / reverse proxy (path-only)
+  -> Paperclip plugin webhook endpoint (/api/plugins/<plugin-id>/webhooks/<provider>)
+  -> Paperclip parent-issue close-out
+```
+
+Every hop in that chain must exist and be reachable. The plugin only owns the last two hops; the ingress hostname and tunnel are infrastructure you stand up separately.
 
 Security floor (non-negotiable for any plugin webhook exposed publicly):
 
@@ -232,6 +248,15 @@ Security floor (non-negotiable for any plugin webhook exposed publicly):
 - **Path-only exposure.** The tunnel/ingress should expose only declared plugin webhook paths. The Paperclip UI, core REST API, board claim, and agent dispatch must not be reachable on the same public hostname; everything else returns 404 at the ingress.
 - **IP allowlist as defense in depth.** Where your ingress can restrict the webhook path to the git provider's published IP ranges, do so. Signature verification is the primary defense; IP allowlist is secondary.
 - **Audit log.** Every inbound webhook delivery (accepted or rejected) lands in Paperclip's `plugin_webhook_deliveries` table. Review for rejected deliveries spiking — that is the signal a secret leaked or rotated incorrectly.
+
+#### Registering the Git-Provider Webhook
+
+Once the public ingress is live, register the webhook on the git provider so merge events reach the plugin. The exact path differs by provider:
+
+- **GitLab:** Project → Settings → Webhooks → add URL `https://<your-ingress-host>/api/plugins/<plugin-id>/webhooks/<provider>`, set the Secret token to the value your plugin's secret reference resolves to, and enable **Merge request events** (plus any other events the plugin handles). GitLab sends the token in the `X-Gitlab-Token` header; the plugin must compare it fail-closed.
+- **GitHub:** Repo (or org) → Settings → Webhooks → add the same URL, set **Secret**, choose `application/json`, and subscribe to **Pull requests** (and any others the plugin handles). GitHub signs the body with HMAC-SHA256 in `X-Hub-Signature-256`; prefer verifying that signature over a plain token.
+
+After registering, send a test delivery from the provider's webhook UI and confirm it lands in `plugin_webhook_deliveries` with a 2xx (or your documented fail-closed status for a deliberately bad signature). A webhook that points at the wrong path silently 404s and produces no close-out — verify the path matches the plugin manifest's declared endpoint exactly.
 
 ### Phase 4: Merge Readiness Gate
 

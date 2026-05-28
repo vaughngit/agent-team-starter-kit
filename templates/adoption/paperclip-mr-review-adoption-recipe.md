@@ -245,6 +245,17 @@ Only after the retrospective is written:
 
 Do not consider extracting any project-specific changes back into shared starter-kit templates until the pilot has clearly succeeded.
 
+### Activation gate for automatic close-out (Phase 3+)
+
+When you build the Phase 2 plugin and want merge close-out to happen automatically, the plugin alone is not enough. Work through this gate in order, and do not assume any later step works until the earlier ones are verified:
+
+- [ ] **Plugin installed** in Paperclip and visible in the plugin list.
+- [ ] **Public ingress live** — your Paperclip instance is reachable at a public hostname, path-only (only the declared webhook path is exposed; the UI and core API stay private). Confirm the hostname resolves and the webhook path returns the plugin's response, not a 404.
+- [ ] **Git-provider webhook registered** against that hostname's webhook path, with the shared secret set and merge/PR events enabled (see "Registering the Git-Provider Webhook" in the regimen doc).
+- [ ] **End-to-end test** — open a throwaway PR/MR, walk it through the lanes, merge it, and confirm the parent Paperclip issue closes out automatically. Record the evidence.
+
+Until every box is checked, **close-out is manual**: the orchestrator closes the parent issue after merge. That is the supported Phase 1 fallback, not a failure. The most common silent failure is assuming "plugin installed" means "close-out automated" — installed is necessary but not sufficient.
+
 ## Step 17: Promote the local copy to v1, or keep it preview
 
 Do not remove preview language until the regimen doc's "Promotion To v1" criteria are met. If the pilot was inconclusive, keep the template marked preview and write down what evidence is still missing.
