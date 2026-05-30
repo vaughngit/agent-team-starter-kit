@@ -282,12 +282,14 @@ Default cadence:
 
 | Role | Scheduled heartbeat default | Cadence | Reason |
 |---|---|---|---|
-| CEO/orchestrator | Enabled | 15 minutes normally; 5 minutes during pilot activation, incident recovery, or unstable automation; 30 minutes for mature low-traffic projects | Reconciles Paperclip-side drift, delegated follow-ups, blocked recovery actions, and post-merge close-out. |
+| CEO/orchestrator | Enabled | 5 minutes during testing; 15 minutes during validation; 30 minutes as the mature default | Reconciles Paperclip-side drift, delegated follow-ups, blocked recovery actions, and post-merge close-out. |
 | Reviewer agents | Disabled | Event-triggered only | Reviewers wake from child issue assignment, comments, or plugin lane activation. They must not poll for work or mutate parent issues. |
 | Implementation agents | Disabled by default | Event-triggered only | Implementation work should wake from explicit assignment/comment/continuation unless a role is intentionally designed as a monitor. |
 | Monitor/ops agents | Case-by-case | Based on the monitored system's required freshness | Use only for roles whose primary job is periodic inspection, such as deploy health or stale CI monitoring. |
 
-The 30-minute cadence is provisional. If two consecutive CEO/orchestrator heartbeats find at least one missed close-out, stranded review lane, or blocked recovery path that the webhook/plugin loops should have converged, drop the cadence back to 15 minutes until the queue is stable again. Record idle token/cost, no-op rate, mutation count, and interval choice in the pilot notes before generalizing.
+The cadence is a progression, not a fixed default. Run the testing cadence (5 minutes) only while proving the loop works. Move to the validation cadence (15 minutes) once the recovery path has been observed working but is not yet trusted to run cold. Settle at the mature cadence (30 minutes) once webhooks, plugin reconciliation, and close-out have proven themselves; at that point the heartbeat is the slow backstop, not the hot loop.
+
+If two consecutive heartbeats at the mature cadence find at least one missed close-out, stranded review lane, or blocked recovery path that the webhook/plugin loops should have converged, drop back to the validation cadence until the queue is stable again. Record idle token/cost, no-op rate, mutation count, and interval choice in the pilot notes before generalizing.
 
 The CEO/orchestrator heartbeat should inspect assigned and blocked work, active recovery actions, stranded review lanes, merged-but-not-closed parent issues, and delegated follow-ups. If it mutates state, it records the evidence in a comment. If no safe mutation exists, it leaves the blocker in place with a named owner and next action.
 

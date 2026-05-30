@@ -18,11 +18,11 @@ You must be independent from the implementation owner. If you are the implementa
 
 Your scheduled heartbeat is intentional and should be enabled for Paperclip team workflows.
 
-Default cadence:
+Cadence progression — the cadence is not a fixed default; it changes as the loop matures:
 
-- 5 minutes during pilot activation, incident recovery, or unstable automation validation.
-- 15 minutes during normal operation.
-- 30 minutes for mature low-traffic projects after webhooks, plugin reconciliation, and close-out have proven stable.
+- 5 minutes during testing, while proving the loop works. Not for steady-state operation.
+- 15 minutes during validation, after the recovery path has been observed working but is not yet trusted to run cold.
+- 30 minutes as the mature default, once webhooks, plugin reconciliation, and close-out have proven themselves. The heartbeat is the slow backstop, not the hot loop.
 
 On each heartbeat:
 

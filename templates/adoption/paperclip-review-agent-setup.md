@@ -27,11 +27,11 @@ Enable scheduled heartbeat on this orchestrator by default:
 
 | Mode | Interval | Use when |
 |---|---|---|
-| Pilot / incident / unstable automation | 5 minutes | You are proving a new workflow, webhook, plugin, recovery path, or close-out behavior. |
-| Normal operation | 15 minutes | Default for active Paperclip team workflows. |
-| Mature low-traffic project | 30 minutes | Webhooks, plugin reconciliation, and review close-out have proven stable. |
+| Testing | 5 minutes | Proving the loop works. Not for steady-state operation. |
+| Validation | 15 minutes | Recovery path has been observed working but is not yet trusted to run cold. |
+| Mature default | 30 minutes | Webhooks, plugin reconciliation, and close-out have proven themselves. The heartbeat is the slow backstop, not the hot loop. |
 
-The 30-minute cadence is provisional. If two consecutive heartbeat runs find missed close-out, stranded review lanes, or blocked recovery paths that should have converged automatically, return to 15 minutes until the queue is stable.
+The cadence is a progression, not a fixed default. If two consecutive heartbeats at the mature cadence find a missed close-out, stranded review lane, or blocked recovery path that the webhook/plugin loops should have converged, drop back to the validation cadence until the queue is stable.
 
 Do not enable scheduled heartbeat on reviewer agents by default. Reviewers wake from child issue assignment, comments, or plugin lane activation. Implementation agents should also remain event-triggered unless their job is explicitly periodic monitoring.
 
@@ -89,7 +89,7 @@ If a project uses a private knowledge base, wiki, or second brain, treat it as p
 - [ ] Live reviewer agents exist for each required lane, or missing lanes are explicitly waived.
 - [ ] Live orchestrator agent exists and is independent from the implementation owner.
 - [ ] Live orchestrator scheduled heartbeat is enabled and interval is documented.
-- [ ] Orchestrator heartbeat cadence matches the workflow state: 5 minutes for pilot/incident, 15 minutes normal, 30 minutes mature low-traffic.
+- [ ] Orchestrator heartbeat cadence matches the workflow state: 5 minutes during testing, 15 minutes during validation, 30 minutes as the mature default.
 - [ ] Each reviewer agent has the capability text above, adapted to the project.
 - [ ] The orchestrator agent has the close-out behavior above, adapted to the project.
 - [ ] The orchestrator agent has the heartbeat convergence behavior above, adapted to the project.

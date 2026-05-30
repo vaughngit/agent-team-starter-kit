@@ -99,11 +99,11 @@ Enable scheduled heartbeat on the CEO/orchestrator before the pilot starts. This
 
 Recommended defaults:
 
-- Active pilot, incident recovery, or unstable automation validation: `enabled: true`, `intervalSec: 300`, `wakeOnDemand: true`.
-- Normal operation after the pilot stabilizes: `enabled: true`, `intervalSec: 900`, `wakeOnDemand: true`.
-- Mature low-traffic project: `enabled: true`, `intervalSec: 1800`, `wakeOnDemand: true`.
+- Testing the loop: `enabled: true`, `intervalSec: 300`, `wakeOnDemand: true`. Use while proving the loop works; not for steady-state operation.
+- Validating the loop: `enabled: true`, `intervalSec: 900`, `wakeOnDemand: true`. Recovery path observed working but not yet trusted to run cold.
+- Mature default: `enabled: true`, `intervalSec: 1800`, `wakeOnDemand: true`. Webhooks, plugin reconciliation, and close-out have proven themselves; heartbeat is the slow backstop.
 
-The 30-minute interval is provisional. If two consecutive orchestrator heartbeats find missed close-out, stranded review lanes, or blocked recovery paths that should have converged automatically, return to 15 minutes until the queue is stable. Record idle token/cost, no-op rate, mutation count, and interval choice in the pilot tracking file.
+If two consecutive heartbeats at the mature cadence find a missed close-out, stranded review lane, or blocked recovery path that the webhook/plugin loops should have converged, drop back to the validation cadence until the queue is stable. Record idle token/cost, no-op rate, mutation count, and interval choice in the pilot tracking file.
 
 Keep reviewer agents event-triggered. Do not turn on scheduled reviewer heartbeat by default; reviewers should wake from child issue assignment, comments, or plugin lane activation. Implementation agents should also remain event-triggered unless their role is explicitly a monitor.
 
