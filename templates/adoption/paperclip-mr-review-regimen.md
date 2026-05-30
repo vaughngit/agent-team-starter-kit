@@ -127,7 +127,9 @@ State changes mid-review are not edge cases — they are the normal mode for any
 | PR/MR is rebased or squashed (SHAs rewritten) | TBD | Open |
 | Required lane is added or removed after enumeration | TBD | Open |
 | PR/MR is closed without merge while review is in flight | TBD | Open |
-| Parent's `executionState` or `executionPolicy` is `null` (no policy attached) | Fall back to comment tagging the reviewer rather than mutating `currentParticipant` | Known Gotchas |
+| Parent's `executionState` or `executionPolicy` is `null` (no policy attached) | Phase 1: fall back to comment tagging the reviewer rather than mutating `currentParticipant`. Phase 2 behavior is TBD per adopter — the founding pilot only validated the Phase 1 fallback. | Known Gotchas |
+| Reviewer posts a decision but uses Markdown emphasis (`Decision: **approve**`) or other strict-format variants | Phase 2 plugin parses tolerant variants and scans for recoverable approvals during reconciliation; rigid parsing leaves approved lanes blocked. | Phase 2 |
+| PR/MR description references multiple Paperclip issues (e.g. `closes #42, supersedes #17`) | Phase 2 plugin resolves the parent by documented precedence (explicit trailer first, source-branch or title second, description fallback third) and blocks on ambiguous matches rather than guessing. | Phase 2 |
 
 Cells TBD by your project's pilot:
 - Most rows above. The pilot is expected to bite on a subset; the retrospective closes those rows first and explicitly defers the rest.
@@ -218,9 +220,32 @@ The plugin subscribes to Paperclip's in-process event bus (`server/src/services/
 - Subscribes to `issue.updated` on child issues to recompute parent readiness and refresh the matrix as decisions land.
 - Declares an inbound webhook in the manifest for PR/MR events (see Phase 3).
 
-The plugin must be idempotent. Use the git provider delivery/event ID plus project ID, PR/MR URL or number, and head SHA as the idempotency key. A retried webhook or repeated `issue.updated` event must update the same parent matrix and child issues, not create duplicate review lanes.
+The plugin must be idempotent. Compose the idempotency key from the git provider delivery/event ID, project ID, PR/MR URL or number, the **event action** (`open`, `update`, `merge`, `close`, etc.), and head SHA. The action component is load-bearing — without it, two different events on the same SHA (e.g., a `comment_added` followed by a `merge`) collide and only the first is processed. A retried webhook or repeated `issue.updated` event must update the same parent matrix and child issues, not create duplicate review lanes.
 
 Effort estimate: comparable to any Paperclip plugin that uses the same SDK surface (`ctx.events.subscribe`, `ctx.api.issues.*`, manifest webhooks). If your project will also build other Paperclip plugins (e.g., a Linear bridge), ship one first to pay the SDK learning tax once.
+
+#### Parent-issue resolution precedence
+
+PR/MR descriptions reference issues incidentally as well as canonically — `Closes #42, supersedes #17, see also #9` is normal. Guessing the parent from any reference produces wrong-parent mutations on real-world MRs. Resolve in this order, and **block on ambiguous matches rather than guess**:
+
+1. **Explicit marker (load-bearing).** The PR/MR description includes an explicit `Paperclip-Parent: <id>` trailer (or whatever format your project commits to). Use it without further parsing.
+2. **Source-branch or title match.** The source branch encodes the parent issue ID (e.g., `fix/CLE-42-...`), or the PR/MR title leads with the parent ID.
+3. **Description body fallback.** Scan the description for the **first** issue reference in `Closes` / `Fixes` / `Resolves` syntax. Ignore mentions in `see also`, `related to`, or buried inside a longer reference list.
+4. **Ambiguity blocks.** If two precedence levels resolve to different parents, or if multiple closing references exist at the same level, the plugin marks the inbound delivery `parent-ambiguous` and posts a blocking comment on the PR/MR rather than picking one.
+
+Adopters: pick the explicit trailer format **before** Phase 2 plugin work begins, and add it to your PR/MR template. Implementation owners should ship a parent trailer on every PR/MR; the precedence above is the safety net for missing or malformed ones.
+
+#### Plugin tolerance for reviewer output variants
+
+Live reviewer agents drift from any strict output format over time — Markdown emphasis (`Decision: **approve**`), trailing punctuation, alternate casing, decision lines appearing inside summary tables instead of as bare lines. Rigid parsing turns drift into "blocked" lanes that an adopter then has to recover manually.
+
+The Phase 2 plugin must:
+
+- Parse reviewer-disposition lines tolerantly — strip Markdown emphasis, normalize casing, accept the documented decision values (`approve`, `request_changes`, `blocked`, `waived`) in any of those formats.
+- On reconciliation, scan child issue comments for a recoverable approval before deciding the lane is blocked. A reviewer that posted a valid approval comment but didn't transition the child issue is recoverable, not lost.
+- Log the parser's interpretation back to the child issue so reviewers see what the plugin understood. This catches drift early instead of at the next reconciliation pass.
+
+The strict `paperclip-reviewer-output-contract.md` format remains the spec for what reviewers should produce; the plugin's tolerance is the safety net so drift doesn't silently orphan approved lanes.
 
 ### Phase 3: Inbound Git-Provider Webhook
 
@@ -258,15 +283,30 @@ Once the public ingress is live, register the webhook on the git provider so mer
 
 After registering, send a test delivery from the provider's webhook UI and confirm it lands in `plugin_webhook_deliveries` with a 2xx (or your documented fail-closed status for a deliberately bad signature). A webhook that points at the wrong path silently 404s and produces no close-out — verify the path matches the plugin manifest's declared endpoint exactly.
 
+#### Idempotency floor for outbound calls
+
+The plugin's outbound calls to the git provider are not always retry-safe by default. Two failure modes show up during real activation that adopters should handle in the plugin, not at the host:
+
+- **Duplicate status transitions on the same SHA.** Providers return `4xx` on repeated transitions — GitLab returns `400 "Cannot transition status … from :pending"` when the plugin tries to re-set a status that is already in the target state. Treat this specific case as an idempotent no-op, not a failure. A bare `try/catch-and-rethrow` on the status POST turns transient retries into `502`s wrapped by Paperclip's host layer.
+- **Match on the structured signal, not on the human-readable error string.** Key the no-op rule on the provider's HTTP status code plus the structured error body. String-matching the provider's English error wording couples the plugin to that wording and breaks on minor localization or release-note changes — exactly when you can't afford a regression.
+
+The plugin must distinguish "already in the target state" (no-op) from "cannot transition for a different reason" (real error) and only swallow the former.
+
+#### Merge timestamp fallback
+
+Merge webhooks do not always include `merged_at`. GitLab specifically omits it on some merge-action deliveries and provides `actioned_at` instead. The plugin's close-out logic must fall back to `actioned_at` (or the provider's equivalent action timestamp) — but **only when the payload's `action` or `state` indicates the MR is actually merged**. Unconditional use of an action timestamp as a merge timestamp mislabels close-out evidence on non-merge events, which also carry `actioned_at`.
+
+Treat `merged_at` as `string | undefined`, declare the fallback field in the same payload type, and gate the fallback on the merge-action condition. Cover both the present and absent cases with tests against fixture payloads captured from real deliveries.
+
 ### Phase 4: Merge Readiness Gate
 
-The gate lives inside the Phase 2 plugin. It cannot block merge on the git provider — Paperclip has no merge-blocking hook into GitLab / GitHub / etc. But it can:
+The gate is implemented inside the Phase 2 plugin. It cannot block merge on the git provider, and — important nuance from real pilot operation — **it also cannot enforce parent-issue state transitions inside Paperclip core.** Paperclip exposes no merge-blocking hook on the git provider side and no enforced transition gate on the parent side. What the gate can do is surface readiness so the human merge step is a one-line read instead of a manual audit:
 
-- Refuse to flip the parent issue past `in_review` until all required child issues are `done` against the current head SHA.
-- Post a structured "not ready" comment listing missing lanes when something tries to advance the parent prematurely.
-- Surface readiness as a parent-issue field that the UI can render.
+- **Mirror readiness onto the PR/MR status check.** Update the git-provider status (`paperclip/mr-review` or equivalent) from `pending` to `success` only when all required child issues are `done` against the current head SHA. The merge button's annotation then reflects Paperclip state.
+- **Post a structured "not ready" comment on the parent issue** listing missing lanes when something attempts to advance the parent prematurely. This is a visible warning, not an enforced block.
+- **Surface readiness as a parent-issue field** that the UI can render.
 
-The actual safeguard against premature production merge stays with the human merge step. The gate makes that step a one-line "approval packet" read, not a manual matrix audit.
+The actual safeguard against premature production merge stays with (a) the human merge step, and (b) any git-provider branch protection or required-status checks the project chooses to enable. The Phase 4 gate does not replace either.
 
 ## Orchestrator Role
 
@@ -295,6 +335,19 @@ The implementation owner:
 - Responds to reviewer findings.
 - Pushes fixes when requested.
 - Does not create, route, waive, or close review lanes for their own work.
+
+## Reviewer Agent Behavior Contract
+
+This contract describes how a live reviewer agent should *behave* once it wakes — independent of the output format (which is owned by `paperclip-reviewer-output-contract.md`). Adopters install this behavior through the agent's system prompt or capability text. Editing this regimen file does not update live agents; see `paperclip-review-agent-setup.md` for the install step.
+
+- **Trigger.** The reviewer wakes when its child issue moves into its lane (orchestrator-driven in Phase 1, plugin-driven in Phase 2). The reviewer does not self-poll for work and does not act on a child issue still in `backlog`.
+- **Discovery.** The reviewer reads (a) the child issue body for the MR URL, diff pointer, originating issue ID, lane scope, and any prior decision, and (b) the MR diff **at the recorded SHA** — not the latest branch tip. Information needed beyond what is in the child issue, parent issue, PR/MR, or repo must be flagged as a context gap, not silently sourced from a private knowledge base.
+- **Output — both surfaces, not just one.** The reviewer posts its review **both** as a comment on the MR (so the merge decision happens with the review visible there) **and** as a decision comment on the child issue (so Paperclip state and the matrix can reflect it). Each comment ends in a parseable line of the form `Decision: approve | request_changes | blocked | waived`. Posting to only one surface is a known failure mode — the founding pilot reproduced it and corrected the agents to always post to both.
+- **Status.** After posting the decision, the reviewer moves its **child** issue to the corresponding state. The reviewer does not transition the **parent** issue — that is the orchestrator's (Phase 1) or the plugin's (Phase 2) job.
+- **Budget.** When scope expansion would exceed the reviewer budget, the reviewer stops and posts a `budget-extension-request` comment on the child issue instead of silently overrunning. The orchestrator or human grants or denies; the reviewer waits for that signal before continuing.
+- **No self-re-review on a new SHA.** When a new SHA arrives, the plugin (Phase 2) creates a fresh SHA-scoped child issue; the reviewer waits for that new issue rather than re-evaluating the stale one. Prior child issues remain as historical evidence and are not mutated.
+
+Adopters who update only this regimen file without updating live agent prompts will see agents continue to follow their old behavior. Treat live-agent verification — re-reading the agent configuration from Paperclip after editing — as part of every regimen change that touches reviewer behavior.
 
 ## Child Review Issue Rule
 
