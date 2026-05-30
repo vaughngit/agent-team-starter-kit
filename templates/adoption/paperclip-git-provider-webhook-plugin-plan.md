@@ -12,13 +12,13 @@ Use polling only as a scheduled reconciliation job that catches missed webhook d
 
 Enable the CEO/orchestrator scheduled heartbeat as the Paperclip-side control loop. Heartbeat does not replace git-provider event capture, but it is a core workflow component: it reconciles stranded review lanes, blocked recovery issues, delegated follow-ups, stale blockers, and parent issues that remain open after merge because webhook/plugin processing missed a transition.
 
-Default cadence:
+Cadence progression. The cadence is not a fixed default; it changes as the loop matures.
 
-- `5 minutes` during pilot activation, incident recovery, or unstable automation validation.
-- `15 minutes` for normal operation.
-- `30 minutes` for mature, low-traffic projects after webhooks and reconciliation have proven stable.
+- `5 minutes` during testing, while proving the loop works. Not for steady-state operation.
+- `15 minutes` during validation, after the recovery path has been observed working but is not yet trusted to run cold.
+- `30 minutes` as the mature default, once webhooks, plugin reconciliation, and close-out have proven themselves. The heartbeat is the slow backstop, not the hot loop.
 
-The 30-minute cadence is provisional. If two consecutive CEO/orchestrator heartbeats find missed close-out, stranded review lanes, or blocked recovery paths that should have converged automatically, return to 15 minutes until the queue is stable.
+If two consecutive heartbeats at the mature cadence find a missed close-out, stranded review lane, or blocked recovery path that the webhook/plugin loops should have converged, drop back to the validation cadence until the queue is stable.
 
 Do not enable scheduled heartbeat on reviewer agents by default. Reviewers should wake from child issue assignment/comment/plugin events; the CEO/orchestrator owns periodic convergence.
 
