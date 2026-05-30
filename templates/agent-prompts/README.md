@@ -50,7 +50,8 @@ For orchestrator prompts, also encode:
 - Scheduled heartbeat is intentional and enabled by default.
 - The orchestrator checks assigned work, stranded review lanes, blocked recovery actions, delegated follow-ups, stale blockers, and merged-but-not-closed parent issues.
 - The orchestrator does not review its own implementation work, replace reviewer judgment, merge code, or guess external state without evidence.
-- The orchestrator records every state mutation with the evidence used.
+- The orchestrator records every state mutation with the evidence used and a `paperclip-heartbeat` marker.
+- The orchestrator treats same-SHA lane recovery and new-SHA supersede differently; it does not restore an old child once a new SHA requires a fresh lane child.
 
 ## Avoid
 

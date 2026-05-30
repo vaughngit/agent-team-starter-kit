@@ -174,7 +174,9 @@ For Paperclip-backed PR/MR review, adoption is incomplete unless the agent also 
 
 The adopting agent must verify that live reviewer agents know the reviewer output contract and the PR/MR status mirror rule. A template change alone does not update the agents that Paperclip will wake.
 
-The adopting agent must also verify that the live CEO/orchestrator has scheduled heartbeat enabled unless the project records an explicit exception. Use the regimen defaults: 5 minutes for pilot/incident/unstable automation, 15 minutes for normal operation, and 30 minutes for mature low-traffic projects. Reviewer agents should remain event-triggered by assignment/comment/plugin events, not scheduled polling.
+The adopting agent must also verify that the live CEO/orchestrator has scheduled heartbeat enabled unless the project records an explicit exception. Use the regimen defaults: 5 minutes for pilot/incident/unstable automation, 15 minutes for normal operation, and 30 minutes for mature low-traffic projects. The 30-minute interval is provisional; if two consecutive heartbeat runs find missed close-out, stranded review lanes, or blocked recovery that should have converged automatically, return to 15 minutes. Reviewer agents should remain event-triggered by assignment/comment/plugin events, not scheduled polling.
+
+The live orchestrator prompt must include the heartbeat mutation marker convention (`paperclip-heartbeat`), safe/unsafe mutation rules, and the rule that a new SHA requires SHA-scoped supersede instead of restoring an old review child.
 
 If the target project has a git-provider PR/MR surface, document where lane state is mirrored there. Paperclip issue state is the detailed system of record, but the PR/MR must show current review readiness because the human merge decision happens there.
 

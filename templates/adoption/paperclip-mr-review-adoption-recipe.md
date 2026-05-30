@@ -103,6 +103,8 @@ Recommended defaults:
 - Normal operation after the pilot stabilizes: `enabled: true`, `intervalSec: 900`, `wakeOnDemand: true`.
 - Mature low-traffic project: `enabled: true`, `intervalSec: 1800`, `wakeOnDemand: true`.
 
+The 30-minute interval is provisional. If two consecutive orchestrator heartbeats find missed close-out, stranded review lanes, or blocked recovery paths that should have converged automatically, return to 15 minutes until the queue is stable. Record idle token/cost, no-op rate, mutation count, and interval choice in the pilot tracking file.
+
 Keep reviewer agents event-triggered. Do not turn on scheduled reviewer heartbeat by default; reviewers should wake from child issue assignment, comments, or plugin lane activation. Implementation agents should also remain event-triggered unless their role is explicitly a monitor.
 
 Record the live orchestrator heartbeat configuration in the tracking file and read it back from Paperclip before activation. The adoption is incomplete if the repo says heartbeat is enabled but the live orchestrator agent is still idle-only.

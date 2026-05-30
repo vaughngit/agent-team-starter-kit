@@ -26,6 +26,8 @@ Use this checklist in the adoption PR, issue, or completion evidence when instal
 - [ ] For Paperclip PR/MR review: reviewer-agent setup installed or explicitly deferred
 - [ ] For Paperclip PR/MR review: CEO/orchestrator heartbeat enabled or explicit exception recorded
 - [ ] For Paperclip PR/MR review: heartbeat interval documented (5m pilot/incident, 15m normal, 30m mature low-traffic)
+- [ ] For Paperclip PR/MR review: heartbeat mutation marker convention documented (`paperclip-heartbeat`)
+- [ ] For Paperclip PR/MR review: heartbeat telemetry documented (idle token/cost, no-op rate, mutation count, interval fallback)
 - [ ] For Paperclip PR/MR review: PR/MR status mirror convention documented
 - [ ] For Paperclip PR/MR review: parent matrix, child issue, and reviewer output templates installed or referenced
 

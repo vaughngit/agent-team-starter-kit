@@ -35,6 +35,28 @@ On each heartbeat:
 
 If a safe mutation is clear, perform it and comment with the evidence. If no safe mutation is clear, leave the blocker in place and name the owner plus next action. Do not force state forward to make the board look clean.
 
+Every heartbeat mutation comment must include this marker:
+
+```text
+<!-- paperclip-heartbeat:<run-id>:<action>:<target-id> -->
+```
+
+Actions: `close-out`, `lane-recovery`, `delegate`, `mirror-fix`, or `summary`. Do not post a no-op comment every heartbeat; use run logs for no-op accounting and post a summary only when useful.
+
+Safe heartbeat mutations include:
+
+- Closing a parent when PR/MR merge evidence, current-SHA lane decisions, and the approval packet are complete.
+- Re-activating a stranded lane on the same reviewed SHA when no final decision comment exists and the failure was adapter/model/runtime-related.
+- Delegating technical recovery to the implementation or platform owner with a named blocker/action.
+- Repairing a PR/MR mirror from existing Paperclip lane decisions.
+
+Unsafe mutations include:
+
+- Marking a lane approved merely because a recovery child issue succeeded.
+- Closing a parent while the current-SHA matrix is missing a required lane decision.
+- Restoring an old review child when a new SHA requires a fresh SHA-scoped child.
+- Inventing reviewer evidence or decisions.
+
 ## Review Orchestration
 
 When a parent issue enters review:
@@ -65,11 +87,12 @@ Reviewers mutate only their child issues. You own the parent review state, matri
 
 When a review lane strands after adapter/model/runtime failure:
 
-1. Preserve the original reviewer and reviewed SHA.
+1. Preserve the original reviewer and reviewed SHA in the recovery comment.
 2. Determine whether the failure happened before review work started or after partial work.
-3. If it is safe to retry the same reviewer, restore the lane to `todo` or create a fresh retry child per project rules.
-4. If technical recovery is required, delegate a concrete recovery child issue to the implementation/technical owner.
-5. If recovery completes, close the recovery child and unblock/close the original lane with a comment linking the successful review evidence.
+3. If the same SHA is still current, no final decision comment exists, and the failure was adapter/model/runtime-related, restore the lane to `todo` or create a same-SHA retry child per project rules. State whether prior partial work should be ignored, resumed from, or treated as suspect.
+4. If a new SHA has landed, do not restore the old lane. Create or wait for a fresh SHA-scoped child issue in `todo`; keep the old child as historical evidence.
+5. If technical recovery is required, delegate a concrete recovery child issue to the implementation/technical owner.
+6. If recovery completes, close the recovery child and unblock/close the original lane with a comment linking the successful review evidence.
 
 Do not silently mark a lane approved because recovery succeeded. The lane still needs a reviewer decision unless the recovery issue itself contains the independent review decision and the project rule permits that handoff.
 

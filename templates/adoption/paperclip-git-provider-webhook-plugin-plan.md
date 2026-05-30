@@ -18,7 +18,17 @@ Default cadence:
 - `15 minutes` for normal operation.
 - `30 minutes` for mature, low-traffic projects after webhooks and reconciliation have proven stable.
 
+The 30-minute cadence is provisional. If two consecutive CEO/orchestrator heartbeats find missed close-out, stranded review lanes, or blocked recovery paths that should have converged automatically, return to 15 minutes until the queue is stable.
+
 Do not enable scheduled heartbeat on reviewer agents by default. Reviewers should wake from child issue assignment/comment/plugin events; the CEO/orchestrator owns periodic convergence.
+
+Heartbeat mutations should be marked in comments with:
+
+```text
+<!-- paperclip-heartbeat:<run-id>:<action>:<target-id> -->
+```
+
+Actions: `close-out`, `lane-recovery`, `delegate`, `mirror-fix`, or `summary`. The plugin should treat these comments as idempotency evidence when reconciling later webhook deliveries.
 
 ## Capability assumptions to verify
 
@@ -157,6 +167,9 @@ Before using this on live PRs/MRs:
 - An invalid signature/token returns `401` and produces no Paperclip mutation.
 - A linked PR/MR with ambiguous parent issue matches blocks instead of guessing.
 - Reconciliation detects a merged PR/MR missed by webhook and closes the parent.
+- If the CEO heartbeat already closed a merged parent, a later merge webhook no-ops or enriches missing evidence without duplicating close-out comments.
+- If plugin reconciliation reactivates a lane while CEO heartbeat fires, the system converges to one current-SHA lane with one owner and no duplicate children.
+- Heartbeat mutation markers are recognized as prior state changes during plugin reconciliation.
 - Public ingress returns `404` for Paperclip UI/core API paths on the webhook hostname.
 
 ## Implementation issue prompt
