@@ -247,6 +247,40 @@ The Phase 2 plugin must:
 
 The strict `paperclip-reviewer-output-contract.md` format remains the spec for what reviewers should produce; the plugin's tolerance is the safety net so drift doesn't silently orphan approved lanes.
 
+#### Lane activation lands in `todo`, not `backlog`
+
+Phase 1's "create lanes in `backlog`, promote one at a time" exists so a human can observe each reviewer wake and intervene before budget is burned. **Phase 2 plugins explicitly override that default** — when the plugin enumerates required lanes, it creates the child issues directly in `todo`. Otherwise the plugin's work silently stalls in `backlog`, no reviewer wakes, and adopters chase "why are no reviewers running" until they find the Phase 1 hand-step is the gap. Document this override in the plugin manifest and in adoption notes so a later reader doesn't reintroduce the `backlog` step thinking they are "following the regimen."
+
+#### SHA-scoped lane reset on new commits
+
+Phase 1 resets affected children in place. **Phase 2 plugins should supersede instead of mutate**: on a new SHA, create *new* SHA-scoped child issues directly in `todo`, and leave prior children intact as historical evidence with their reviewed-SHA recorded. Suggested title format: append the short SHA (e.g., `[Review][<parent>][<Lane>] <title> @ <sha7>`).
+
+Rationale: in-place mutation loses the per-SHA decision history. With supersede, the parent matrix becomes a per-SHA timeline — reviewers re-pulling context see what was approved at which SHA without git archaeology.
+
+#### Scheduled reconciliation as a safety net
+
+Webhooks miss events — provider outages, plugin restarts mid-delivery, dropped ingress hops, retries the provider gives up on. None are theoretical; all surface during real activation. The plugin must run a **scheduled reconciliation pass** that converges drift:
+
+- Pull the open PR/MR list from the git provider; ensure the parent Paperclip issue exists in the expected state and that required child lanes are present and current against the head SHA.
+- Re-attempt previously-blocked parent-ambiguous deliveries.
+- Re-scan child issues for recoverable approvals (per "Plugin tolerance for reviewer output variants") and converge their state.
+- Reconcile merge close-out for PR/MRs that closed while the plugin was unavailable.
+
+Cadence: every 15 minutes during the activation pilot (webhook gaps are most likely then), tunable to 30–60 minutes once stable. Reconciliation must be idempotent — re-running on a converged system makes no mutations.
+
+#### Phase 2 plugin acceptance tests
+
+Exercise these cases against fixture payloads or a sandboxed Paperclip instance before declaring the plugin ready. Minimum bar — add project-specific cases on top:
+
+- **Valid merge happy path** → parent closes out with merge SHA, deploy info if applicable, and approval-packet link.
+- **Duplicate merge delivery** → second delivery is a no-op; close-out comment is not duplicated.
+- **Invalid auth** → request fails closed; no Paperclip mutation occurs.
+- **Ambiguous parent** → delivery marked `parent-ambiguous`, blocking comment posted on the PR/MR, no parent mutation.
+- **Missed-webhook reconciliation** → plugin is down when a merge event fires → scheduled pass converges the parent to `done` after restart, even with no webhook delivered.
+- **Tolerant parse variants** → `Decision: **approve**` (Markdown emphasis) or decision line inside a summary table → lane converges to `done`.
+- **SHA reset** → new SHA arrives on the same PR/MR → fresh SHA-scoped child issues created in `todo`; prior children remain intact.
+- **Idempotent pending-status retry** → repeated `pending` status that the provider already accepted → no-op, not a failure.
+
 ### Phase 3: Inbound Git-Provider Webhook
 
 > **Prerequisite — automatic close-out requires public ingress AND a registered webhook.** Automatic merge close-out does not work until BOTH of these are live:
@@ -273,6 +307,7 @@ Security floor (non-negotiable for any plugin webhook exposed publicly):
 - **Path-only exposure.** The tunnel/ingress should expose only declared plugin webhook paths. The Paperclip UI, core REST API, board claim, and agent dispatch must not be reachable on the same public hostname; everything else returns 404 at the ingress.
 - **IP allowlist as defense in depth.** Where your ingress can restrict the webhook path to the git provider's published IP ranges, do so. Signature verification is the primary defense; IP allowlist is secondary.
 - **Audit log.** Every inbound webhook delivery (accepted or rejected) lands in Paperclip's `plugin_webhook_deliveries` table. Review for rejected deliveries spiking — that is the signal a secret leaked or rotated incorrectly.
+- **Host-layer status-code wrapping caveat.** Some Paperclip host versions wrap plugin auth failures into a generic 5xx (e.g., 502) at the externally-visible response. What matters for security is the plugin's fail-closed *mutation* behavior — verify in `plugin_webhook_deliveries` that no Paperclip writes occurred for a rejected delivery, rather than relying on the status code your tunnel sees. Track host-side status passthrough as a separate issue, not as a plugin bug.
 
 #### Registering the Git-Provider Webhook
 

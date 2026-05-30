@@ -93,19 +93,38 @@ In the tracking file, write:
 
 If your project's persona setup means the obvious orchestrator candidate is also the implementation owner, pick a different orchestrator (a peer agent, a supervisor agent, or a human). Do not proceed with the assignment if independence cannot be honored.
 
-## Step 6: Update live reviewer agents
+## Step 6: Create or update live reviewer agents
 
-Before creating child issues, update the live Paperclip reviewer agents using `paperclip-review-agent-setup.md`.
+Before creating child issues, ensure each lane has a live reviewer agent in Paperclip — created if it doesn't exist, updated to current behavior if it does. Use `paperclip-review-agent-setup.md` as the live-agent-setup companion, and the **Reviewer Agent Behavior Contract** section of `paperclip-mr-review-regimen.md` as the canonical behavior spec.
 
-Minimum install:
+### Creating reviewer agents in Paperclip
+
+For each lane the pilot will use, create the reviewer agent in your Paperclip board (see Paperclip's agent-config-ui spec for the current field names — the conventions below follow that spec):
+
+1. Open the Paperclip agents page and start a **New Agent**.
+2. **Name** after the lane (e.g., `Correctness Reviewer`, `Operational Reviewer`, `UI/QA Reviewer`, `Docs Reviewer`). Keep project-specific scope out of the name; put it in Capabilities.
+3. **Role**: `general`, or a lane-meaningful role (`qa` for UI/QA, `devops` for Operational). Role is documentation, not permission scope.
+4. **Reports To**: any existing agent (typically the orchestrator or CEO) — org-chart only, not permissions.
+5. **Capabilities**: paste the lane's behavior contract as system-prompt content. Start from the Reviewer Agent Behavior Contract section of the regimen; add the lane-specific scope on top. Seed prompts from `templates/agent-prompts/` if your starter-kit copy has them populated.
+6. **Adapter Type**: per your project's reviewer-runtime choice (`claude_local`, `codex_local`, `http`, `process`).
+7. **Heartbeat Policy**: event-triggered — woken by child issue assignment, **not** scheduled polling. Reviewers must not self-poll for work.
+8. **Monthly Budget**: set the per-reviewer ceiling the budget rule allows; the budget rule itself is enforced by the agent's behavior, not by Paperclip.
+
+After creating each agent, read its configuration back from Paperclip and record the verification in the tracking file. The agent does not need an API key for normal review operation — the plugin uses its own configured secret-refs, not per-agent keys. Generate per-agent keys only if your activation flow requires one (e.g., for an out-of-band caller).
+
+### Updating reviewer agents
+
+For each existing reviewer agent, verify the capability/prompt content covers:
 
 - each lane reviewer knows its lane scope;
 - each lane reviewer knows the reviewer output contract;
+- each lane reviewer knows it must post on **both the MR comment thread *and* the child issue**, ending with a parseable `Decision:` line — per Reviewer Agent Behavior Contract in the regimen;
 - each lane reviewer knows it must include a PR/MR status mirror line;
 - each lane reviewer knows to block when required context is missing from the repo, PR/MR, parent issue, or child issue;
-- each lane reviewer knows not to approve its own implementation work.
+- each lane reviewer knows not to approve its own implementation work;
+- each lane reviewer knows to request a budget extension instead of silently overrunning.
 
-Read the agents back from Paperclip and record verification in the tracking file. Do not assume updating these template files changed the agents that Paperclip will wake.
+Read the agents back from Paperclip and record the verification in the tracking file. Do not assume updating these template files changed the agents that Paperclip will wake.
 
 ## Step 7: Draft the pilot Paperclip issue body in a file
 
@@ -251,8 +270,8 @@ When you build the Phase 2 plugin and want merge close-out to happen automatical
 
 - [ ] **Plugin installed** in Paperclip and visible in the plugin list.
 - [ ] **Public ingress live** — your Paperclip instance is reachable at a public hostname, path-only (only the declared webhook path is exposed; the UI and core API stay private). Confirm the hostname resolves and the webhook path returns the plugin's response, not a 404.
-- [ ] **Git-provider webhook registered** against that hostname's webhook path, with the shared secret set and merge/PR events enabled (see "Registering the Git-Provider Webhook" in the regimen doc).
-- [ ] **End-to-end test** — open a throwaway PR/MR, walk it through the lanes, merge it, and confirm the parent Paperclip issue closes out automatically. Record the evidence.
+- [ ] **Git-provider webhook registered** against that hostname's webhook path, with the shared secret set and merge/PR events enabled (see "Registering the Git-Provider Webhook" in the regimen doc). **Verify each test delivery lands in Paperclip's `plugin_webhook_deliveries` table with a 2xx** — a webhook pointed at the wrong path silently 404s and produces no entry, which is the single most common deployment bug.
+- [ ] **End-to-end test** — open a throwaway PR/MR, walk it through the lanes, merge it, and confirm the parent Paperclip issue closes out automatically. **Expect to find and fix plugin gaps at this step.** Pilots that have run this gate consistently surfaced real plugin bugs (idempotency on duplicate status retries, merge-timestamp fallback, reviewer-output drift) during the throwaway test — not earlier. Record both the successful close-out and the bugs you fixed along the way as activation evidence.
 
 Until every box is checked, **close-out is manual**: the orchestrator closes the parent issue after merge. That is the supported Phase 1 fallback, not a failure. The most common silent failure is assuming "plugin installed" means "close-out automated" — installed is necessary but not sufficient.
 
