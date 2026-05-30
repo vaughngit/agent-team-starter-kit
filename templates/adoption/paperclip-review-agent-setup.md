@@ -21,7 +21,19 @@ Do not assign the implementation owner of the PR/MR as any review-lane reviewer 
 
 ## Required orchestrator agent
 
-Create or identify an orchestrator persona that is independent from the implementation owner. The orchestrator is the role that routes lanes, maintains the parent matrix and PR/MR mirror, aggregates the final approval packet, and closes out the parent issue after the human merge decision.
+Create or identify an orchestrator persona that is independent from the implementation owner. The orchestrator is the role that routes lanes, maintains the parent matrix and PR/MR mirror, aggregates the final approval packet, closes out the parent issue after the human merge decision, and runs the scheduled heartbeat control loop that keeps Paperclip-side team state converged.
+
+Enable scheduled heartbeat on this orchestrator by default:
+
+| Mode | Interval | Use when |
+|---|---|---|
+| Pilot / incident / unstable automation | 5 minutes | You are proving a new workflow, webhook, plugin, recovery path, or close-out behavior. |
+| Normal operation | 15 minutes | Default for active Paperclip team workflows. |
+| Mature low-traffic project | 30 minutes | Webhooks, plugin reconciliation, and review close-out have proven stable. |
+
+The 30-minute cadence is provisional. If two consecutive heartbeat runs find missed close-out, stranded review lanes, or blocked recovery paths that should have converged automatically, return to 15 minutes until the queue is stable.
+
+Do not enable scheduled heartbeat on reviewer agents by default. Reviewers wake from child issue assignment, comments, or plugin lane activation. Implementation agents should also remain event-triggered unless their job is explicitly periodic monitoring.
 
 ## Capability text to install
 
@@ -41,6 +53,10 @@ The orchestrator agent should include this behavior in its live Paperclip config
 
 ```text
 You are the review orchestrator for structured PR/MR review. You enumerate required lanes, route one lane at a time, maintain the parent review matrix, mirror current lane state to the git-provider PR/MR, aggregate the final approval packet, and escalate conflicts or blockers without voting away reviewer decisions.
+
+Your scheduled heartbeat is intentional. On each heartbeat, inspect your assigned actionable work, blocked recovery actions, stranded review lanes, delegated follow-ups, and merged-but-not-closed parent issues. Restore a live execution path when the safe next action is clear; otherwise leave the blocker in place with a named owner and next action. Record every state mutation with the evidence used and include a marker in the comment: `<!-- paperclip-heartbeat:<run-id>:<action>:<target-id> -->`.
+
+Safe heartbeat mutations include closing a parent with complete merge evidence and current-SHA approvals, reactivating a same-SHA stranded lane with no final decision comment, delegating technical recovery, and repairing a PR/MR mirror from existing lane decisions. Unsafe mutations include approving a lane merely because recovery succeeded, closing a parent with missing lane decisions, or restoring an old child when a new SHA requires supersede.
 
 After the human merges the linked PR/MR, mark the parent Paperclip implementation issue done and post a close-out comment containing the merge commit SHA, deploy info if applicable, and a link to the final approval packet. Do this within minutes of the merge; Paperclip close-out is not optional once the work has merged.
 
@@ -72,9 +88,13 @@ If a project uses a private knowledge base, wiki, or second brain, treat it as p
 
 - [ ] Live reviewer agents exist for each required lane, or missing lanes are explicitly waived.
 - [ ] Live orchestrator agent exists and is independent from the implementation owner.
+- [ ] Live orchestrator scheduled heartbeat is enabled and interval is documented.
+- [ ] Orchestrator heartbeat cadence matches the workflow state: 5 minutes for pilot/incident, 15 minutes normal, 30 minutes mature low-traffic.
 - [ ] Each reviewer agent has the capability text above, adapted to the project.
 - [ ] The orchestrator agent has the close-out behavior above, adapted to the project.
+- [ ] The orchestrator agent has the heartbeat convergence behavior above, adapted to the project.
 - [ ] Reviewer agents are independent from likely implementation owners.
+- [ ] Reviewer agents are event-triggered only unless a project-specific exception is recorded.
 - [ ] UI reviewer has browser/screenshot tooling, or UI lane is routed to a human.
 - [ ] Operational reviewer has access to CI/deploy metadata needed for its lane.
 - [ ] Docs reviewer has repo/MR/issue context, not hidden external notes.

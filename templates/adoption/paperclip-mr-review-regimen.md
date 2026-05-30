@@ -212,7 +212,13 @@ Do not try to build all of this at once. The phases below let adopters validate 
 
 Build only after Phase 1 has produced a retrospective and the manual orchestration has been observed working end-to-end.
 
-Use `paperclip-git-provider-webhook-plugin-plan.md` for the implementation contract. The default model is: git-provider PR/MR webhook as the primary signal, scheduled reconciliation polling as a backup, and Paperclip heartbeat only as an agent execution primitive — not as the external-state detector.
+Use `paperclip-git-provider-webhook-plugin-plan.md` for the implementation contract. The default model has three loops:
+
+1. **Git-provider webhook loop.** PR/MR webhooks are the primary external event signal.
+2. **Plugin reconciliation loop.** Scheduled plugin reconciliation catches missed provider events, plugin downtime, and stale git-provider state.
+3. **CEO/orchestrator heartbeat loop.** The orchestrator heartbeat is the Paperclip-side control loop for stranded work, blocked recovery paths, delegated follow-ups, and close-out drift.
+
+Do not use reviewer or implementation-agent heartbeat as a substitute for git-provider event handling. Do enable the CEO/orchestrator heartbeat as part of the operating model.
 
 The plugin subscribes to Paperclip's in-process event bus (`server/src/services/plugin-event-bus.ts`):
 
@@ -268,6 +274,40 @@ Webhooks miss events — provider outages, plugin restarts mid-delivery, dropped
 
 Cadence: every 15 minutes during the activation pilot (webhook gaps are most likely then), tunable to 30–60 minutes once stable. Reconciliation must be idempotent — re-running on a converged system makes no mutations.
 
+#### CEO/orchestrator heartbeat as the team control loop
+
+The CEO/orchestrator scheduled heartbeat is a core operating component for Paperclip team workflows. It is not a replacement for provider webhooks, and it is not a reason for reviewer agents to self-poll. It is the control loop that keeps Paperclip state converged when automation misses something or when an agent run strands mid-work.
+
+Default cadence:
+
+| Role | Scheduled heartbeat default | Cadence | Reason |
+|---|---|---|---|
+| CEO/orchestrator | Enabled | 15 minutes normally; 5 minutes during pilot activation, incident recovery, or unstable automation; 30 minutes for mature low-traffic projects | Reconciles Paperclip-side drift, delegated follow-ups, blocked recovery actions, and post-merge close-out. |
+| Reviewer agents | Disabled | Event-triggered only | Reviewers wake from child issue assignment, comments, or plugin lane activation. They must not poll for work or mutate parent issues. |
+| Implementation agents | Disabled by default | Event-triggered only | Implementation work should wake from explicit assignment/comment/continuation unless a role is intentionally designed as a monitor. |
+| Monitor/ops agents | Case-by-case | Based on the monitored system's required freshness | Use only for roles whose primary job is periodic inspection, such as deploy health or stale CI monitoring. |
+
+The 30-minute cadence is provisional. If two consecutive CEO/orchestrator heartbeats find at least one missed close-out, stranded review lane, or blocked recovery path that the webhook/plugin loops should have converged, drop the cadence back to 15 minutes until the queue is stable again. Record idle token/cost, no-op rate, mutation count, and interval choice in the pilot notes before generalizing.
+
+The CEO/orchestrator heartbeat should inspect assigned and blocked work, active recovery actions, stranded review lanes, merged-but-not-closed parent issues, and delegated follow-ups. If it mutates state, it records the evidence in a comment. If no safe mutation exists, it leaves the blocker in place with a named owner and next action.
+
+Heartbeat comments that mutate review state must include a machine-readable marker so plugin reconciliation and later audits can distinguish heartbeat-driven work from plugin or human close-out:
+
+```text
+<!-- paperclip-heartbeat:<run-id>:<action>:<target-id> -->
+```
+
+Allowed actions are `close-out`, `lane-recovery`, `delegate`, `mirror-fix`, and `summary`. Do not post a no-op comment on every heartbeat; use run logs for no-op accounting and post a throttled `summary` marker only when useful.
+
+Safe heartbeat mutations:
+
+| Safe | Not safe |
+|---|---|
+| Close parent when PR/MR merge evidence, complete current-SHA matrix, and approval packet are present. | Close parent when the current-SHA matrix is missing a required lane decision. |
+| Re-activate a stranded lane on the same SHA when no final decision comment was posted and the failure was adapter/runtime-related. | Mark a lane approved merely because a recovery child issue succeeded. |
+| Delegate technical recovery to the implementation or platform owner with a named blocker/action. | Reassign reviewer ownership across SHAs instead of creating a fresh SHA-scoped child. |
+| Add or repair a PR/MR mirror comment from existing Paperclip lane decisions. | Invent lane decisions or evidence that the reviewer did not post. |
+
 #### Phase 2 plugin acceptance tests
 
 Exercise these cases against fixture payloads or a sandboxed Paperclip instance before declaring the plugin ready. Minimum bar — add project-specific cases on top:
@@ -280,6 +320,9 @@ Exercise these cases against fixture payloads or a sandboxed Paperclip instance 
 - **Tolerant parse variants** → `Decision: **approve**` (Markdown emphasis) or decision line inside a summary table → lane converges to `done`.
 - **SHA reset** → new SHA arrives on the same PR/MR → fresh SHA-scoped child issues created in `todo`; prior children remain intact.
 - **Idempotent pending-status retry** → repeated `pending` status that the provider already accepted → no-op, not a failure.
+- **Heartbeat already closed parent** → CEO/orchestrator heartbeat closes a merged parent at T0; webhook arrives at T1; plugin no-ops or enriches missing evidence without duplicating close-out comments.
+- **Heartbeat during reconciliation** → plugin reactivates a child while heartbeat fires; the final state converges to one current-SHA lane with one owner and no duplicate children.
+- **Heartbeat marker recognition** → plugin reconciliation treats `paperclip-heartbeat` mutation markers as prior state-change evidence.
 
 ### Phase 3: Inbound Git-Provider Webhook
 
@@ -357,6 +400,8 @@ The orchestrator:
 - Escalates conflicts and blockers.
 - Records waivers and reasons.
 - Produces the final approval packet.
+- Runs the scheduled heartbeat control loop for Paperclip-side convergence.
+- Reconciles stranded lanes, blocked recovery actions, delegated follow-ups, stale blockers, and parent close-out drift.
 - After human merge/revert, closes out the parent issue with merge SHA, deploy info if applicable, and approval packet link.
 
 The orchestrator must not be the implementation owner of the PR/MR under review.
@@ -381,6 +426,15 @@ This contract describes how a live reviewer agent should *behave* once it wakes 
 - **Status.** After posting the decision, the reviewer moves its **child** issue to the corresponding state. The reviewer does not transition the **parent** issue — that is the orchestrator's (Phase 1) or the plugin's (Phase 2) job.
 - **Budget.** When scope expansion would exceed the reviewer budget, the reviewer stops and posts a `budget-extension-request` comment on the child issue instead of silently overrunning. The orchestrator or human grants or denies; the reviewer waits for that signal before continuing.
 - **No self-re-review on a new SHA.** When a new SHA arrives, the plugin (Phase 2) creates a fresh SHA-scoped child issue; the reviewer waits for that new issue rather than re-evaluating the stale one. Prior child issues remain as historical evidence and are not mutated.
+
+### Heartbeat-Driven Lane Recovery
+
+When the CEO/orchestrator heartbeat recovers a stranded review lane, the reviewer follows these rules:
+
+- **Same SHA, no final decision posted.** If the lane is reactivated on the same reviewed SHA after an adapter/model/runtime failure and no final decision comment exists, the reviewer may re-run the lane. The recovery comment must say whether prior partial work should be ignored, resumed from, or treated as suspect.
+- **Same SHA, final decision already posted.** Do not re-review. The orchestrator or plugin should reconcile from the existing decision comment and child status instead of waking the reviewer again.
+- **New SHA exists.** Do not restore the old lane for review. The orchestrator or plugin must supersede with a fresh SHA-scoped child issue in `todo`; the old child remains historical evidence.
+- **Recovery success is not approval.** A recovery child issue can restore the execution path, but it does not approve the lane unless it contains an independent reviewer decision that satisfies the Reviewer Output Contract and the project explicitly permits that handoff.
 
 Adopters who update only this regimen file without updating live agent prompts will see agents continue to follow their old behavior. Treat live-agent verification — re-reading the agent configuration from Paperclip after editing — as part of every regimen change that touches reviewer behavior.
 

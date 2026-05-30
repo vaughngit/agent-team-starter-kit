@@ -24,6 +24,10 @@ Use this checklist in the adoption PR, issue, or completion evidence when instal
 - [ ] UI/browser evidence guidance added when relevant
 - [ ] Tool-specific instructions added only where the project already uses that tool
 - [ ] For Paperclip PR/MR review: reviewer-agent setup installed or explicitly deferred
+- [ ] For Paperclip PR/MR review: CEO/orchestrator heartbeat enabled or explicit exception recorded
+- [ ] For Paperclip PR/MR review: heartbeat interval documented (5m pilot/incident, 15m normal, 30m mature low-traffic)
+- [ ] For Paperclip PR/MR review: heartbeat mutation marker convention documented (`paperclip-heartbeat`)
+- [ ] For Paperclip PR/MR review: heartbeat telemetry documented (idle token/cost, no-op rate, mutation count, interval fallback)
 - [ ] For Paperclip PR/MR review: PR/MR status mirror convention documented
 - [ ] For Paperclip PR/MR review: parent matrix, child issue, and reviewer output templates installed or referenced
 
@@ -42,6 +46,7 @@ Use this checklist in the adoption PR, issue, or completion evidence when instal
 - [ ] Existing instructions were preserved rather than overwritten unnecessarily
 - [ ] Adoption diff reviewed for accidental project-specific/private data
 - [ ] Live tool state verified when adoption required live agents, boards, or tracker configuration
+- [ ] Paperclip orchestrator heartbeat configuration read back from the live agent, if applicable
 - [ ] Paperclip reviewer agents verified, if applicable, rather than assuming repo template changes updated them
 - [ ] Human-facing summary includes files changed, assumptions, and remaining decisions
 

@@ -16,7 +16,7 @@ Start with `docs/agent-adoption-protocol.md`, then use the files here that match
 - `paperclip-mr-review-adoption-recipe.md` — step-by-step recipe for a new project's first adoption of the regimen.
 - `paperclip-git-provider-webhook-plugin-plan.md` — Phase 2 plugin plan for automating PR/MR webhook handling, close-out, lane reset, and reconciliation.
 - `paperclip-mr-review-matrix.md` — parent issue matrix for tracking required review lanes and decisions.
-- `paperclip-review-agent-setup.md` — live reviewer-agent capability and setup guidance.
+- `paperclip-review-agent-setup.md` — live reviewer-agent and CEO/orchestrator capability, heartbeat, and setup guidance.
 - `paperclip-review-child-issue.md` — child issue template for a single review lane.
 - `paperclip-reviewer-output-contract.md` — required decision/evidence format for review-lane agents.
 - `linear-issue-guidance.md` — Linear issue guidance.
@@ -28,9 +28,10 @@ Do not install every tool-specific file by default. Inspect the target project, 
 For Paperclip PR/MR review, install the regimen as a set:
 
 - project or board instructions that point to the regimen;
-- live reviewer-agent capability updates from `paperclip-review-agent-setup.md`;
+- live reviewer-agent and CEO/orchestrator capability updates from `paperclip-review-agent-setup.md`;
+- CEO/orchestrator scheduled heartbeat enabled and verified from live Paperclip state;
 - parent matrix and child-issue templates;
 - reviewer output contract;
 - a PR/MR status mirror convention on the git provider.
 
-Do not stop after updating the process docs. If the live reviewer agents do not know the output contract and PR/MR mirror rule, the next review will drift back into Paperclip-only state.
+Do not stop after updating the process docs. If the live reviewer agents do not know the output contract and PR/MR mirror rule, the next review will drift back into Paperclip-only state. If the live CEO/orchestrator heartbeat is not enabled, stranded work and close-out drift will depend on a human noticing it.

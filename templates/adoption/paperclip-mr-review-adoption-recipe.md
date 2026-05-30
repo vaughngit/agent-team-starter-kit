@@ -93,6 +93,22 @@ In the tracking file, write:
 
 If your project's persona setup means the obvious orchestrator candidate is also the implementation owner, pick a different orchestrator (a peer agent, a supervisor agent, or a human). Do not proceed with the assignment if independence cannot be honored.
 
+## Step 5A: Enable the orchestrator heartbeat
+
+Enable scheduled heartbeat on the CEO/orchestrator before the pilot starts. This is a core Paperclip team-workflow control loop, not an optional fallback. Webhooks and plugin reconciliation handle external git-provider events; the orchestrator heartbeat handles Paperclip-side drift, recovery, delegation, and close-out.
+
+Recommended defaults:
+
+- Active pilot, incident recovery, or unstable automation validation: `enabled: true`, `intervalSec: 300`, `wakeOnDemand: true`.
+- Normal operation after the pilot stabilizes: `enabled: true`, `intervalSec: 900`, `wakeOnDemand: true`.
+- Mature low-traffic project: `enabled: true`, `intervalSec: 1800`, `wakeOnDemand: true`.
+
+The 30-minute interval is provisional. If two consecutive orchestrator heartbeats find missed close-out, stranded review lanes, or blocked recovery paths that should have converged automatically, return to 15 minutes until the queue is stable. Record idle token/cost, no-op rate, mutation count, and interval choice in the pilot tracking file.
+
+Keep reviewer agents event-triggered. Do not turn on scheduled reviewer heartbeat by default; reviewers should wake from child issue assignment, comments, or plugin lane activation. Implementation agents should also remain event-triggered unless their role is explicitly a monitor.
+
+Record the live orchestrator heartbeat configuration in the tracking file and read it back from Paperclip before activation. The adoption is incomplete if the repo says heartbeat is enabled but the live orchestrator agent is still idle-only.
+
 ## Step 6: Create or update live reviewer agents
 
 Before creating child issues, ensure each lane has a live reviewer agent in Paperclip — created if it doesn't exist, updated to current behavior if it does. Use `paperclip-review-agent-setup.md` as the live-agent-setup companion, and the **Reviewer Agent Behavior Contract** section of `paperclip-mr-review-regimen.md` as the canonical behavior spec.
@@ -107,7 +123,7 @@ For each lane the pilot will use, create the reviewer agent in your Paperclip bo
 4. **Reports To**: any existing agent (typically the orchestrator or CEO) — org-chart only, not permissions.
 5. **Capabilities**: paste the lane's behavior contract as system-prompt content. Start from the Reviewer Agent Behavior Contract section of the regimen; add the lane-specific scope on top. Seed prompts from `templates/agent-prompts/` if your starter-kit copy has them populated.
 6. **Adapter Type**: per your project's reviewer-runtime choice (`claude_local`, `codex_local`, `http`, `process`).
-7. **Heartbeat Policy**: event-triggered — woken by child issue assignment, **not** scheduled polling. Reviewers must not self-poll for work.
+7. **Heartbeat Policy**: event-triggered — woken by child issue assignment, comments, or plugin lane activation, **not** scheduled polling. Reviewers must not self-poll for work.
 8. **Monthly Budget**: set the per-reviewer ceiling the budget rule allows; the budget rule itself is enforced by the agent's behavior, not by Paperclip.
 
 After creating each agent, read its configuration back from Paperclip and record the verification in the tracking file. The agent does not need an API key for normal review operation — the plugin uses its own configured secret-refs, not per-agent keys. Generate per-agent keys only if your activation flow requires one (e.g., for an out-of-band caller).
@@ -251,6 +267,7 @@ Append to the tracking file (and, if you maintain a project-level copy of the re
 - Observed token/time cost per PR/MR.
 - Pre-conditions a Phase 2 plugin would need to assume.
 - Whether reviewer-agent and orchestrator capability text was sufficient or agents still missed the PR/MR mirror/context-boundary/close-out rule.
+- Whether the orchestrator heartbeat interval was too frequent, too slow, or appropriate; record no-op rate and state mutations it caught.
 - Whether required review context was available in the repo/PR/MR/issues or had to be copied out of an external knowledge base.
 - Whether the pattern should be expanded to more PR/MRs as-is, expanded with changes, or abandoned.
 

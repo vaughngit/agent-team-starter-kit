@@ -74,6 +74,16 @@ Important visibility rule: Paperclip issue state is not enough. The orchestrator
 
 Important agent-setup rule: changing these repo templates does not automatically update live Paperclip agents. When adopting the regimen, update the reviewer agents' live capability/instruction text using `paperclip-review-agent-setup.md`, then read the agents back from Paperclip to verify the rule is present.
 
+Important heartbeat rule: Paperclip team workflows should run a scheduled CEO/orchestrator heartbeat. This is the control loop for Paperclip-side convergence: stranded lanes, blocked recovery issues, delegated follow-ups, stale blockers, and parent close-out drift. Use 15 minutes as the normal default, 5 minutes for pilots/incidents/unstable automation, and 30 minutes for mature low-traffic projects. The 30-minute cadence is provisional; if two consecutive heartbeat runs find missed close-out, stranded lanes, or blocked recovery that should have converged automatically, return to 15 minutes. Keep reviewer agents event-triggered unless a specific reviewer role is intentionally periodic.
+
+Important heartbeat audit rule: every heartbeat-driven state mutation should be recorded with evidence and a machine-readable marker:
+
+```text
+<!-- paperclip-heartbeat:<run-id>:<action>:<target-id> -->
+```
+
+Safe heartbeat mutations include closing a parent with complete PR/MR merge evidence and current-SHA approvals, reactivating a same-SHA stranded lane with no final decision comment, delegating technical recovery, and repairing a PR/MR mirror from existing lane decisions. Unsafe mutations include marking a lane approved because recovery succeeded, closing a parent with missing lane decisions, or restoring an old child when a new SHA requires supersede.
+
 ## Safety
 
 Never put secret values, credentials, private keys, tokens, cookies, or sensitive production/customer data in Paperclip issue text or comments. Use secret-manager pointer names only.
