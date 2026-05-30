@@ -7,30 +7,30 @@ This directory holds the **agent behavior layer** of the Paperclip MR review reg
 
 The behavior layer is *how each live reviewer agent should behave once it wakes*, expressed as prompt content rather than process documentation.
 
-## Status: empty by design
+## Status: seeded from the ClearFi pilot
 
-This directory ships intentionally empty. Prompt content is most useful when seeded from a working pilot's live agents, not invented from a spec. A starter-kit prompt that hasn't been observed working in a real review will drift from reality faster than it can be corrected.
+This directory ships with reviewer prompts genericized from the ClearFi pilot's four live reviewer agents (Correctness, Operational, UI/QA, Docs), exported and stripped of project-specific identifiers on 2026-05-30. Each file's source-note header documents the provenance. These reflect *one* pilot's working set, not a universal contract.
 
-**If you are adopting the regimen for the first time:**
+**Known gaps vs the regimen's Reviewer Agent Behavior Contract.** The live ClearFi prompts predate the contract's formalization in this regimen, so the seeded files do not yet encode every rule from "Reviewer Agent Behavior Contract" in `paperclip-mr-review-regimen.md`. Tracked as a follow-up on the source agents:
 
-1. Read the **Reviewer Agent Behavior Contract** section of `paperclip-mr-review-regimen.md`. That is the minimum each prompt must encode.
-2. For each lane your project uses, write a prompt that combines the regimen's behavior contract with your project's specific scope rules (file paths, deploy considerations, UI tooling, test conventions).
-3. Save it here as `<lane>-reviewer-prompt.md` so your future-self and team can iterate on it alongside the regimen.
+- Posting final decisions to **both** the MR comment thread and the child issue is not explicit (only the PR/MR status mirror line is).
+- The parseable `Decision: approve | request_changes | blocked | waived` line is not stated as a required output.
+- The budget-extension-request protocol is implicit ("respect budget") rather than spelled out.
+- Self-review block / recusal is not stated.
+- SHA-scoped re-review behavior (the reviewer waits for a fresh SHA-scoped child issue instead of re-evaluating the stale one) is not mentioned.
+- The runtime context boundary and child-issue-only status-mutation rule are not fully stated.
 
-**If your pilot has produced reviewer agents that work well:**
+**When you adopt these prompts**, layer the missing rules from `templates/adoption/paperclip-mr-review-regimen.md` ("Reviewer Agent Behavior Contract") on top of the seeded content. The seeds give you voice, scope, and lane-specific lenses validated by real review operation; the regimen gives you the contract rules that drift exposed.
 
-- Export their prompts from Paperclip (one per agent).
-- Genericize them — strip project-specific paths, issue IDs, deploy info, customer names, repo URLs — and contribute them back to the starter kit so the next adopter inherits proven content.
+**If you adapt or replace these prompts**, follow the same genericize-and-contribute-back loop: export your project's live prompts, strip project-specific identifiers, save here as `<lane>-reviewer-prompt.md` (replacing or sitting alongside the ClearFi seeds), and contribute back as a PR so the next adopter has multiple working examples to compare.
 
-## Expected files when populated
+## Files in this directory
 
-```
-agent-prompts/
-  correctness-reviewer-prompt.md
-  operational-reviewer-prompt.md
-  ui-qa-reviewer-prompt.md
-  docs-reviewer-prompt.md
-```
+- `correctness-reviewer-prompt.md` — behavior, regression, data integrity, auth, migrations, tests, edge cases.
+- `operational-reviewer-prompt.md` — deployability, migration safety, runtime config, rollback, observability, blast radius, artifact hygiene.
+- `ui-qa-reviewer-prompt.md` — UI/QA with browser/runtime evidence, artifact retention, workflow/visual/auth-routing lenses, non-destructive testing.
+- `docs-reviewer-prompt.md` — operator clarity, source-of-truth alignment, evidence linkage, safety language, completion discipline.
+- `README.md` — this file.
 
 Naming is suggested, not required — match what your project actually deploys.
 
