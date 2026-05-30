@@ -256,6 +256,17 @@ When you build the Phase 2 plugin and want merge close-out to happen automatical
 
 Until every box is checked, **close-out is manual**: the orchestrator closes the parent issue after merge. That is the supported Phase 1 fallback, not a failure. The most common silent failure is assuming "plugin installed" means "close-out automated" — installed is necessary but not sufficient.
 
+#### Credential hygiene during activation
+
+Activation is the highest-risk window for the plugin's secrets. The Paperclip host may log request bodies on failed plugin calls — including the body of a request whose handler raised on a credential it just rotated. Apply these rules during and immediately after the activation gate:
+
+- **Treat any failed-request log line as a leaked credential.** If a secret was in flight when the host wrote a request body to its logs or its journal, assume it leaked. Rotate that specific secret again — both at the source and in the plugin's secret reference — and confirm the next delivery uses the rotated value.
+- **Audit Paperclip's log paths for credential strings before declaring activation complete.** Grep the log directory and the host journal for the secret's expected prefix or shape (`glpat-`, `paperclip_agent_`, hex tokens of the relevant length). A clean grep is part of the gate, not optional.
+- **Prefer ephemeral test secrets during validation.** Run the activation end-to-end test with a secret you plan to rotate immediately afterward, not the long-lived production secret. The validation step is the most likely to produce failed requests with their bodies logged.
+- **Document rotated secrets in the activation evidence.** The activation record should name which secrets were rotated, when, and the trigger — so the next adopter or auditor can reconstruct the hygiene history without re-running greps.
+
+A clean public 404/405 posture (the rest of the activation gate) does not protect a secret that was written to a host log inside the trust boundary.
+
 ## Step 17: Promote the local copy to v1, or keep it preview
 
 Do not remove preview language until the regimen doc's "Promotion To v1" criteria are met. If the pilot was inconclusive, keep the template marked preview and write down what evidence is still missing.
