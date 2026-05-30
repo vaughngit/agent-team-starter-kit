@@ -74,6 +74,8 @@ Important visibility rule: Paperclip issue state is not enough. The orchestrator
 
 Important agent-setup rule: changing these repo templates does not automatically update live Paperclip agents. When adopting the regimen, update the reviewer agents' live capability/instruction text using `paperclip-review-agent-setup.md`, then read the agents back from Paperclip to verify the rule is present.
 
+Important heartbeat rule: Paperclip team workflows should run a scheduled CEO/orchestrator heartbeat. This is the control loop for Paperclip-side convergence: stranded lanes, blocked recovery issues, delegated follow-ups, stale blockers, and parent close-out drift. Use 15 minutes as the normal default, 5 minutes for pilots/incidents/unstable automation, and 30 minutes for mature low-traffic projects. Keep reviewer agents event-triggered unless a specific reviewer role is intentionally periodic.
+
 ## Safety
 
 Never put secret values, credentials, private keys, tokens, cookies, or sensitive production/customer data in Paperclip issue text or comments. Use secret-manager pointer names only.

@@ -212,7 +212,13 @@ Do not try to build all of this at once. The phases below let adopters validate 
 
 Build only after Phase 1 has produced a retrospective and the manual orchestration has been observed working end-to-end.
 
-Use `paperclip-git-provider-webhook-plugin-plan.md` for the implementation contract. The default model is: git-provider PR/MR webhook as the primary signal, scheduled reconciliation polling as a backup, and Paperclip heartbeat only as an agent execution primitive — not as the external-state detector.
+Use `paperclip-git-provider-webhook-plugin-plan.md` for the implementation contract. The default model has three loops:
+
+1. **Git-provider webhook loop.** PR/MR webhooks are the primary external event signal.
+2. **Plugin reconciliation loop.** Scheduled plugin reconciliation catches missed provider events, plugin downtime, and stale git-provider state.
+3. **CEO/orchestrator heartbeat loop.** The orchestrator heartbeat is the Paperclip-side control loop for stranded work, blocked recovery paths, delegated follow-ups, and close-out drift.
+
+Do not use reviewer or implementation-agent heartbeat as a substitute for git-provider event handling. Do enable the CEO/orchestrator heartbeat as part of the operating model.
 
 The plugin subscribes to Paperclip's in-process event bus (`server/src/services/plugin-event-bus.ts`):
 
@@ -267,6 +273,21 @@ Webhooks miss events — provider outages, plugin restarts mid-delivery, dropped
 - Reconcile merge close-out for PR/MRs that closed while the plugin was unavailable.
 
 Cadence: every 15 minutes during the activation pilot (webhook gaps are most likely then), tunable to 30–60 minutes once stable. Reconciliation must be idempotent — re-running on a converged system makes no mutations.
+
+#### CEO/orchestrator heartbeat as the team control loop
+
+The CEO/orchestrator scheduled heartbeat is a core operating component for Paperclip team workflows. It is not a replacement for provider webhooks, and it is not a reason for reviewer agents to self-poll. It is the control loop that keeps Paperclip state converged when automation misses something or when an agent run strands mid-work.
+
+Default cadence:
+
+| Role | Scheduled heartbeat default | Cadence | Reason |
+|---|---|---|---|
+| CEO/orchestrator | Enabled | 15 minutes normally; 5 minutes during pilot activation, incident recovery, or unstable automation; 30 minutes for mature low-traffic projects | Reconciles Paperclip-side drift, delegated follow-ups, blocked recovery actions, and post-merge close-out. |
+| Reviewer agents | Disabled | Event-triggered only | Reviewers wake from child issue assignment, comments, or plugin lane activation. They must not poll for work or mutate parent issues. |
+| Implementation agents | Disabled by default | Event-triggered only | Implementation work should wake from explicit assignment/comment/continuation unless a role is intentionally designed as a monitor. |
+| Monitor/ops agents | Case-by-case | Based on the monitored system's required freshness | Use only for roles whose primary job is periodic inspection, such as deploy health or stale CI monitoring. |
+
+The CEO/orchestrator heartbeat should inspect assigned and blocked work, active recovery actions, stranded review lanes, merged-but-not-closed parent issues, and delegated follow-ups. If it mutates state, it records the evidence in a comment. If no safe mutation exists, it leaves the blocker in place with a named owner and next action.
 
 #### Phase 2 plugin acceptance tests
 
@@ -357,6 +378,8 @@ The orchestrator:
 - Escalates conflicts and blockers.
 - Records waivers and reasons.
 - Produces the final approval packet.
+- Runs the scheduled heartbeat control loop for Paperclip-side convergence.
+- Reconciles stranded lanes, blocked recovery actions, delegated follow-ups, stale blockers, and parent close-out drift.
 - After human merge/revert, closes out the parent issue with merge SHA, deploy info if applicable, and approval packet link.
 
 The orchestrator must not be the implementation owner of the PR/MR under review.

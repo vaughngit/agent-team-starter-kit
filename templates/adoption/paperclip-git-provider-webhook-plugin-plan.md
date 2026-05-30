@@ -10,7 +10,15 @@ Use the git provider's PR/MR webhook as the primary signal into a Paperclip plug
 
 Use polling only as a scheduled reconciliation job that catches missed webhook deliveries, disabled webhooks, or Paperclip downtime.
 
-Do not use Paperclip agent heartbeat as the detector. Heartbeat runs agents; it does not watch external git-provider state.
+Enable the CEO/orchestrator scheduled heartbeat as the Paperclip-side control loop. Heartbeat does not replace git-provider event capture, but it is a core workflow component: it reconciles stranded review lanes, blocked recovery issues, delegated follow-ups, stale blockers, and parent issues that remain open after merge because webhook/plugin processing missed a transition.
+
+Default cadence:
+
+- `5 minutes` during pilot activation, incident recovery, or unstable automation validation.
+- `15 minutes` for normal operation.
+- `30 minutes` for mature, low-traffic projects after webhooks and reconciliation have proven stable.
+
+Do not enable scheduled heartbeat on reviewer agents by default. Reviewers should wake from child issue assignment/comment/plugin events; the CEO/orchestrator owns periodic convergence.
 
 ## Capability assumptions to verify
 
